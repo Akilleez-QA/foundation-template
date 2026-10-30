@@ -11,7 +11,7 @@
     "CONTRIBUTING.md": "9ed1fe3efc3c3f000b98754c6909fa978112d9f6540952a4e8e0fdddedd3c01e",
     "LICENSE": "fb981668c18a279e285fc4d83fba1e836cc84dd4daa73c9697d3cfd2d8aca6e0",
     "NOTICE.md": "612fed4775eecf3503432401df1638b8f394d5d4ef3c8aa25195d6360630a289",
-    "README.md": "d0b7be2fbb8df804823ceab008ad10c3cf15b608841a8f1e61068e12220b061d",
+    "README.md": "a3809f0f48075ae8b92746df3311815d12c4c522b4201a0ada82a0b48263f846",
     "SECURITY.md": "7e14a8a25cb03c7055f8966e9ca2052de5f818bc3fbfe825c9a916c1e9463990",
     "SUPPORT.md": "e3ebb589274d55dc463a69c7ca0843edd2bdf2bda01efa3f88be7c03681c343c",
     "docs/README.md": "a75d462384ee13bd21c1a3fd13fa82c3e909f284d5e664a58cdffa8715ad9a93",
@@ -32,8 +32,8 @@
     "foundation_template_bridge/schemas.py": "6519de4783a77be09e6cd6a4f480e5f70b6e77bfb331e4402e89ceecc265216d",
     "foundation_template_bridge/server.py": "d5050b0a6eef2e745b32253f30d2414910fba588e71106f59cd77d40bfae00c1",
     "tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "tests/test_bridge.py": "7e47dd97cb1b80189483cec104c1d806266f052e979ff69ded8a55034f53b2c9",
-    "tools/build_manifest.py": "b5114412d6003ba9e954489bafbaa3dc08d032ef142eeb632e65612b48e60a90"
+    "tests/test_bridge.py": "5624f0b16f496bc990ce87ab8819301591667d29e3a222073bd10ed849aed9a6",
+    "tools/build_manifest.py": "94ef233353aa2e4a81e1c0331619ce46e86f8682bf4b2fd72fef2e61d8497bf0"
   },
   "schema": "foundation-template-source-manifest/1",
   "version": "0.1.0"
