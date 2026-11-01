@@ -34,8 +34,7 @@
     "tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "tests/test_bridge.py": "5624f0b16f496bc990ce87ab8819301591667d29e3a222073bd10ed849aed9a6",
     "tests/test_input_limits.py": "c7bb995e956fcc8ca8fc77d5c13c3ac1d4acefc1b65f66bab7fe049fac0307ae",
-    "tools/build_manifest.py": "94ef233353aa2e4a81e1c0331619ce46e86f8682bf4b2fd72fef2e61d8497bf0",
-    "tools/package_source.py": "d2c190f80abc14fa365774b8ef90619060bd9df3cf2c0009a3f5969c9b43e6d5"
+    "tools/build_manifest.py": "94ef233353aa2e4a81e1c0331619ce46e86f8682bf4b2fd72fef2e61d8497bf0"
   },
   "schema": "foundation-template-source-manifest/1",
   "version": "0.1.0"
