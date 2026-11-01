@@ -12,7 +12,7 @@
     "CONTRIBUTING.md": "9ed1fe3efc3c3f000b98754c6909fa978112d9f6540952a4e8e0fdddedd3c01e",
     "LICENSE": "fb981668c18a279e285fc4d83fba1e836cc84dd4daa73c9697d3cfd2d8aca6e0",
     "NOTICE.md": "612fed4775eecf3503432401df1638b8f394d5d4ef3c8aa25195d6360630a289",
-    "README.md": "fca8b225be558eecae87035ce175f833eab4685728edb37916dcfbe7a3c812f0",
+    "README.md": "4249415e259d73f205aa48a8ed6dad6a14b537390c64b2a653f8c847ac139035",
     "SECURITY.md": "7e14a8a25cb03c7055f8966e9ca2052de5f818bc3fbfe825c9a916c1e9463990",
     "SUPPORT.md": "e3ebb589274d55dc463a69c7ca0843edd2bdf2bda01efa3f88be7c03681c343c",
     "docs/README.md": "a75d462384ee13bd21c1a3fd13fa82c3e909f284d5e664a58cdffa8715ad9a93",
@@ -34,7 +34,8 @@
     "tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "tests/test_bridge.py": "5624f0b16f496bc990ce87ab8819301591667d29e3a222073bd10ed849aed9a6",
     "tests/test_input_limits.py": "c7bb995e956fcc8ca8fc77d5c13c3ac1d4acefc1b65f66bab7fe049fac0307ae",
-    "tools/build_manifest.py": "94ef233353aa2e4a81e1c0331619ce46e86f8682bf4b2fd72fef2e61d8497bf0"
+    "tools/build_manifest.py": "94ef233353aa2e4a81e1c0331619ce46e86f8682bf4b2fd72fef2e61d8497bf0",
+    "tools/package_source.py": "d2c190f80abc14fa365774b8ef90619060bd9df3cf2c0009a3f5969c9b43e6d5"
   },
   "schema": "foundation-template-source-manifest/1",
   "version": "0.1.0"
