@@ -55,11 +55,12 @@ Do not weaken checks or edit expected test results to obtain a pass.
 ## Source and release boundaries
 
 [SOURCE-MANIFEST.json](SOURCE-MANIFEST.json) records SHA-256 hashes for every
-shipped file. Regenerate it with the command above after any change, including
-documentation, and include the updated manifest with the change. The inventory
+shipped source file outside the root `.github/` tree. Regenerate it with the
+command above after any change to covered files, including documentation, and
+include the updated manifest with the change. The inventory
 includes files outside Git's tracked set; avoid leaving temporary artifacts in
-the repository. The manifest excludes itself, `.git`, `__pycache__`, and `.pyc`
-files. Tests compare its inventory and hashes with the working tree.
+the repository. The manifest excludes itself, the root `.github/` tree, `.git`,
+`__pycache__`, and `.pyc` files. Tests compare its inventory and hashes with the working tree.
 
 The manifest tool prints the manifest hash, file count, and canonical tool
 inventory hash. Consumers must repin when updating their vendored copy, in the
