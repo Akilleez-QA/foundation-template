@@ -8,16 +8,20 @@ A minimal working Foundation to copy when you start a new domain
 
 ## Status
 
-Version 0.1.0. 1 read-only tool(s) behind a stdio JSON-RPC bridge, standard library only. Every result carries Evidence and an input hash. A verdict is an observation, not an acceptance decision.
+Version 0.1.0, unreleased (no tags yet). One read-only placeholder tool behind a stdio JSON-RPC bridge, standard library only. Every result, including tool errors, carries Evidence and an input hash. A result is an observation, not an acceptance decision.
+
+Classification: self-assessed Class E analog, not safety-critical; not a NASA compliance determination (see the [software management plan](docs/plan/software-management-plan.md#1-software-classification-self-assessed)). The documentation set is itself the template for a new Foundation's documentation: [Start a new Foundation](docs/guides/how-to/start-a-new-foundation.md).
 
 ## Quickstart
 
-```
+```sh
 git clone https://github.com/Akilleez-QA/foundation-template
 cd foundation-template
 python -B -m unittest discover -s tests -t .
 python -B tools/build_manifest.py
 ```
+
+Requires Python 3.11 or newer; nothing is installed. The tests end with `OK`, and `build_manifest.py` prints the file count, manifest SHA-256 and inventory SHA-256 without changing a clean checkout. To talk to the bridge, follow the [first-session tutorial](docs/guides/tutorials/first-bridge-session.md).
 
 ## What is inside
 
@@ -27,16 +31,21 @@ python -B tools/build_manifest.py
 
 ## Measured
 
-At commit `9ce46fa2af5dd1cb9c363a6913bae0aa4175ff47`, Python 3.14.8 passes 10 tests with no skips in each mode:
+The generated [test report](docs/verification/reports/STR-unreleased.md) records the latest local run of the CI commands for main: commit, Python version, per-test results in normal and optimized mode, the trace check and the secret scan.
 
-```
-python -B -m unittest discover -s tests -t .
-python -B -O -m unittest discover -s tests -t .
-```
+CI runs both modes on Python 3.12, scans history with gitleaks and verifies the source manifest.
+
+## Limitations
+
+- The only tool is a placeholder that echoes its input; it has no domain meaning.
+- The numeric profile is integers only.
+- Several bridge error paths have no test; copies inherit them (see the [requirements](docs/requirements/requirements.md#9-untested-behaviour-gaps)).
+
+Details: [Limitations](docs/guides/explanation/limitations.md).
 
 ## Documentation
 
-See [docs/README.md](docs/README.md): requirements, architecture, interface control, verification matrix, configuration management.
+Start at [docs/README.md](docs/README.md): a [tutorial](docs/guides/tutorials/first-bridge-session.md), [Start a new Foundation](docs/guides/how-to/start-a-new-foundation.md), the generated [tool catalog](docs/guides/reference/tool-catalog.md), and the control documents (plan, compliance matrix, requirements, design, interface, data dictionary, test plan, verification matrix, configuration management, assurance record). Copy them with the code.
 
 ## Related projects
 
@@ -59,8 +68,8 @@ See [docs/README.md](docs/README.md): requirements, architecture, interface cont
 | `foundation_template/` | Domain package |
 | `foundation_template_bridge/` | stdio JSON-RPC bridge and schemas |
 | `tests/` | Unit and bridge tests |
-| `tools/` | Manifest and data tools |
-| `docs/` | Requirements, architecture, ICD, verification, configuration, guides |
+| `tools/` | Manifest, trace-check and documentation generators |
+| `docs/` | Plan, requirements, design, interface, data dictionary, verification, configuration, releases, assurance, guides |
 | `SOURCE-MANIFEST.json` | SHA-256 of every shipped source file outside `.github/` |
 
 ## Contributing
