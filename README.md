@@ -19,13 +19,14 @@ a result. The Foundation examines it and returns an observation with the evidenc
 behind it. It never changes anything and never controls equipment. The final
 decision stays with a person or with the program that called it. Producers don't
 grade their own work; a separate Foundation does. Because the checker is its own
-process with its own pinned files, the code that made a result can't also change
-how that result is judged, which ordinary validation code inside the producer
-can't promise.
+process, the code that made a result isn't also the code that judges it. Standalone,
+you get that separation, the receipt and the read-only boundary; proof that the
+checker's files are unchanged comes from comparing them with `SOURCE-MANIFEST.json`,
+which Cstack does automatically.
 
 A Foundation runs on its own: any program that writes requests to its stdin can
-use it, for example a CI job that pipes a producer's output through it and fails
-on a tool error. [Cstack](https://github.com/Akilleez-QA/cstack) is a host
+use it, for example a CI job with a small wrapper you write that turns a
+producer's output into `tools/call` lines and fails on a tool error. [Cstack](https://github.com/Akilleez-QA/cstack) is a host
 program built around Foundations. It keeps a copy of each one with every file's
 hash pinned, and its adapter refuses to start a Foundation whose files no longer
 match, so nobody can quietly change the checker.
@@ -238,13 +239,13 @@ Details: [Limitations](docs/guides/explanation/limitations.md).
 | Repository | Role |
 |---|---|
 | [Cstack](https://github.com/Akilleez-QA/cstack) | Host; runs Foundations from byte-pinned copies |
-| [EndoForge](https://github.com/Akilleez-QA/endoforge) | Workshop for running coding agents with checks and receipts |
+| [EndoForge](https://github.com/Akilleez-QA/endoforge) | Research engine that turns short needs into checked WebAssembly kernels |
 | [POODO](https://github.com/Akilleez-QA/poodo) | Reasoning skill that shows evidence before it acts |
 | [foundation-engine](https://github.com/Akilleez-QA/foundation-engine) | Browser games framework; Cstack uses its two read-only validators as a Foundation |
 | [foundation-math](https://github.com/Akilleez-QA/foundation-math) | Exact checks of mathematical claims and certificates |
 | [foundation-film](https://github.com/Akilleez-QA/foundation-film) | Film-production acceptance checks |
 | [foundation-refrigeration](https://github.com/Akilleez-QA/foundation-refrigeration) | Refrigeration data and checks |
-| [foundation-robotics](https://github.com/Akilleez-QA/foundation-robotics) | Motion checks for robots |
+| [foundation-robotics](https://github.com/Akilleez-QA/foundation-robotics) | Physics checks for motion |
 | foundation-template (this repository) | Minimal Foundation to copy for a new subject |
 
 ## Layout
