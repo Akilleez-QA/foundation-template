@@ -2,8 +2,10 @@
 
 # foundation-template
 
-The smallest working Foundation: copy it to build a read-only checker for your
-own subject, with the protocol, receipts, tests and documentation already in place.
+A Foundation is a small program that checks other programs' results in one
+subject and reports what it found, without changing anything. This is the
+smallest working one: copy it to build your own, with the protocol, receipts,
+tests and documentation already in place.
 
 [<img src="https://img.shields.io/github/actions/workflow/status/Akilleez-QA/foundation-template/ci.yml?branch=main&style=flat-square&labelColor=000000" alt="CI">](https://github.com/Akilleez-QA/foundation-template/actions/workflows/ci.yml) <img src="https://img.shields.io/badge/license-GPL--3.0--only-2400FF?style=flat-square&labelColor=000000">
 
@@ -16,7 +18,10 @@ or film. Another program, the producer (a person, a script or an AI agent), make
 a result. The Foundation examines it and returns an observation with the evidence
 behind it. It never changes anything and never controls equipment. The final
 decision stays with a person or with the program that called it. Producers don't
-grade their own work; a separate Foundation does.
+grade their own work; a separate Foundation does. Because the checker is its own
+process with its own pinned files, the code that made a result can't also change
+how that result is judged, which ordinary validation code inside the producer
+can't promise.
 
 A Foundation runs on its own: any program that writes requests to its stdin can
 use it, for example a CI job that pipes a producer's output through it and fails
@@ -40,7 +45,7 @@ the host to call it, limits on what it will read, a receipt format that says wha
 was checked, tests for all of that, and a documentation set. This repository has
 all of it working around one placeholder tool. You replace the placeholder with
 your own checks and keep the rest. It is standard-library Python with nothing to
-install.
+install, licensed GPL-3.0-only, and copies inherit that license (see [License](#license)).
 
 ## How it works
 
@@ -58,7 +63,9 @@ call. Then it calls a tool function in `foundation_template/tools.py`. Every rep
 carries a receipt: the result or the error, the evidence behind it, a SHA-256 hash
 of the exact arguments, and a `boundary` block stating that this is an observation
 only, not a determination or a control action. A bad argument still gets a
-receipt, marked as a tool error.
+receipt, marked as a tool error. Around the receipt, `assessment` names the
+outcome, and `formal_proof` and `runtime_goal_acceptance` are always `false`: a
+receipt is never a proof or an acceptance.
 
 Two deliberate defaults:
 
@@ -161,8 +168,8 @@ In short, for a Foundation called `foundation-acoustics`:
    ```
 
    The rename also changes GitHub links and the CI badge to your new repository
-   name, and the family table's own `foundation-template` row, which you should
-   put back.
+   name. It also rewrites this template's own row in the Related projects table
+   of `README.md`; change that row back to `foundation-template`.
 
 2. **Replace the placeholder tool.** Write your checks in
    `foundation_acoustics/tools.py` (the tool functions; the top-level `tools/`
