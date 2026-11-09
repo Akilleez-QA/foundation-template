@@ -18,10 +18,10 @@ behind it. It never changes anything, never controls equipment and never makes
 the final decision. Producers don't grade their own work; a separate Foundation
 does.
 
-Foundations belong to the Cstack family (code name Mjölnir).
-[Cstack](https://github.com/Akilleez-QA/cstack) is the host: it runs each
-Foundation from a copy whose file hashes it has pinned, so the checker can't be
-changed without anyone noticing.
+A Foundation runs on its own: any program that writes the protocol to its stdin
+can use it. [Cstack](https://github.com/Akilleez-QA/cstack) is the family's host
+(the family's code name is Mjölnir). It runs each Foundation from a copy whose
+file hashes it has pinned, so the checker can't be changed without anyone noticing.
 
 ## Why use this template
 
@@ -53,8 +53,9 @@ error rather than dropped.
 
 ## Example
 
-The template's one tool, `echo_observation`, is a placeholder that hands back
-what you send. Here is a real session: initialize, one good call, one bad call.
+The template's one tool, `echo_observation`, is a placeholder: it only checks that
+its argument is a string of 1 to 256 characters and hands it back. Your tools do
+the real checking. Here is a real session: initialize, one good call, one bad call.
 Run it from the repository root:
 
 ```sh
@@ -82,7 +83,9 @@ The good call's receipt (pretty-printed; the bridge writes one line per reply):
 }
 ```
 
-The bad call (an empty string) comes back with `"isError": true`, `"result": null`,
+Each reply's `result` holds `isError` and `structuredContent`; the receipt sits
+inside `structuredContent`. The bad call (an empty string) comes back with
+`"isError": true`, a receipt with `"result": null`,
 `"error": "observation must be a string of 1 to 256 characters"`, and its own
 evidence entry saying which check refused it. The bridge exits 0 when stdin closes.
 The [first-session tutorial](docs/guides/tutorials/first-bridge-session.md) walks
@@ -90,7 +93,7 @@ through this step by step.
 
 ## Install and run
 
-You need Python 3.11 or newer (CI uses 3.12). Nothing is installed.
+You need Python 3.11 or newer as `python3` (CI uses 3.12). Nothing is installed.
 
 ```sh
 git clone https://github.com/Akilleez-QA/foundation-template
@@ -108,7 +111,8 @@ The full walk-through is [Start a new Foundation](docs/guides/how-to/start-a-new
 In short, for a Foundation called `foundation-acoustics`:
 
 1. **Copy and rename.** Clone into `foundation-acoustics`, start a fresh Git
-   history, rename the two packages and replace every `foundation_template` and
+   history, rename the two packages (`foundation_template` and
+   `foundation_template_bridge`) and replace every `foundation_template` and
    `foundation-template` with your name. The guide has the exact commands.
 2. **Replace the placeholder tool.** Write your checks in `tools.py`, give each a
    closed input and output schema in `schemas.py`, and replace the placeholder
@@ -128,8 +132,10 @@ In short, for a Foundation called `foundation-acoustics`:
    python3 -B -O -m unittest discover -s tests -t .
    ```
 
-5. **Connect it to a host.** A Cstack adapter pins the three values that
-   `build_manifest.py` prints. The adapter lives in the Cstack repository.
+5. **Connect it to a host.** Any program can drive the bridge directly. To run
+   it under Cstack, add an adapter in the Cstack repository that pins the three
+   values `build_manifest.py` prints: `files` (the file count), `sha256` (the
+   manifest hash) and `inventory_sha256` (the tool-inventory hash).
 
 ### What a copy inherits
 
