@@ -15,7 +15,9 @@ one placeholder tool, `echo_observation`, through a stdio JSON-RPC bridge.
 - `foundation_template_bridge/schemas.py` defines the tool inventory and schemas.
 - `tests/` contains unit, bridge, and input-limit tests using `unittest`.
 - `tools/build_manifest.py` generates the source manifest and prints host pins.
-- `docs/` contains requirements, architecture, interface control, and verification.
+- `tools/check_trace.py`, `tools/gen_docs.py` and `tools/gen_reports.py` check the
+  requirement trace and generate the tool catalog, test report and version description.
+- `docs/` contains the family documentation set that new Foundations copy.
 
 Preserve read-only observations: a verdict is not an acceptance decision. Keep
 `boundary.observation_only`, Evidence in `receipt.evidence`, and the request hash
@@ -32,8 +34,9 @@ The bridge starts from the repository root with:
 python -B -m foundation_template_bridge
 ```
 
-Add a row to [the verification matrix](docs/verification/verification-matrix.md)
-for every new requirement. Keep schema, tool inventory, implementation, and
+Every new requirement needs an SRS entry, a row in
+[the verification matrix](docs/verification/verification-matrix.md) and an SDD
+allocation; `tests/test_docs_trace.py` fails otherwise. Keep schema, tool inventory, implementation, and
 verification consistent when changing the interface.
 
 ## Verification
@@ -41,6 +44,7 @@ verification consistent when changing the interface.
 Run from the repository root after edits, in this order:
 
 ```sh
+python -B tools/gen_docs.py
 python -B tools/build_manifest.py
 python -B -m unittest discover -s tests -t .
 python -B -O -m unittest discover -s tests -t .
@@ -75,7 +79,7 @@ concern and about 400 changed lines or less. Use the
 `Assisted-by: <tool>` trailer for AI-written changes.
 
 Preserve GPL-3.0-only terms and [NOTICE.md](NOTICE.md). Keep secrets out of commits;
-configuration management requires Gitleaks and TruffleHog before every push.
+CI scans history with Gitleaks; scan locally before pushing.
 Put rationale in `docs/`; add no code comments. Never edit expected test results;
 if results must change, follow CONTRIBUTING.md's regeneration and PR disclosure
 requirements.
