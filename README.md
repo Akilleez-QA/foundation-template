@@ -2,83 +2,209 @@
 
 # foundation-template
 
-A minimal working Foundation to copy when you start a new domain
+The smallest working Foundation: copy it to build a read-only checker for your
+own subject, with the protocol, receipts, tests and documentation already in place.
 
 [<img src="https://img.shields.io/github/actions/workflow/status/Akilleez-QA/foundation-template/ci.yml?branch=main&style=flat-square&labelColor=000000" alt="CI">](https://github.com/Akilleez-QA/foundation-template/actions/workflows/ci.yml) <img src="https://img.shields.io/badge/license-GPL--3.0--only-2400FF?style=flat-square&labelColor=000000">
 
-## Status
+**Starting a new Foundation?** Go straight to [Start a new Foundation](#start-a-new-foundation).
 
-Version 0.1.0, unreleased (no tags yet). One read-only placeholder tool behind a stdio JSON-RPC bridge, standard library only. Every result, including tool errors, carries Evidence and an input hash. A result is an observation, not an acceptance decision.
+## What a Foundation is
 
-Classification: self-assessed Class E analog, not safety-critical; not a NASA compliance determination (see the [software management plan](docs/plan/software-management-plan.md#1-software-classification-self-assessed)). The documentation set is itself the template for a new Foundation's documentation: [Start a new Foundation](docs/guides/how-to/start-a-new-foundation.md).
+A Foundation is a read-only checker for one subject, such as maths, refrigeration
+or film. Another program, the producer (a person, a script or an AI agent), makes
+a result. The Foundation examines it and returns an observation with the evidence
+behind it. It never changes anything, never controls equipment and never makes
+the final decision. Producers don't grade their own work; a separate Foundation
+does.
 
-## Quickstart
+Foundations belong to the Cstack family (code name Mjölnir).
+[Cstack](https://github.com/Akilleez-QA/cstack) is the host: it runs each
+Foundation from a copy whose file hashes it has pinned, so the checker can't be
+changed without anyone noticing.
+
+## Why use this template
+
+Every Foundation needs the same plumbing before it can check anything: a way for
+the host to call it, limits on what it will read, a receipt format that says what
+was checked, tests for all of that, and a documentation set. This repository has
+all of it working around one placeholder tool. You replace the placeholder with
+your own checks and keep the rest. It is standard-library Python with nothing to
+install.
+
+## How it works
+
+```mermaid
+flowchart LR
+    H["Host<br/>Cstack, a script or you"] -->|"one JSON-RPC request per line on stdin"| B["Bridge<br/>size, depth and type limits;<br/>initialize first"]
+    B -->|"tool name + arguments"| T["Your tool<br/>checks the arguments,<br/>computes an observation"]
+    T --> R["Receipt<br/>result or error, Evidence,<br/>input hash, read-only boundary"]
+    R -->|"one JSON response per line on stdout"| H
+```
+
+The bridge (`foundation_template_bridge/`) reads one request per line, rejects
+anything too large, too deep or not in its numeric profile (integers only), and
+requires `initialize` before any tool call. It then calls a tool function in
+`foundation_template/tools.py`. Every reply carries a receipt: the result or the
+error, the evidence behind it, a SHA-256 hash of the exact arguments, and a
+`boundary` block stating that this is an observation only, not a determination or
+a control action. A bad argument still gets a receipt; it is marked as a tool
+error rather than dropped.
+
+## Example
+
+The template's one tool, `echo_observation`, is a placeholder that hands back
+what you send. Here is a real session: initialize, one good call, one bad call.
+Run it from the repository root:
+
+```sh
+printf '%s\n' \
+  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"foundation-template-jsonrpc/1"}}' \
+  '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"echo_observation","arguments":{"observation":"reading 7"}}}' \
+  '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"echo_observation","arguments":{"observation":""}}}' \
+  | python3 -B -m foundation_template_bridge
+```
+
+The good call's receipt (pretty-printed; the bridge writes one line per reply):
+
+```json
+{
+  "status": "ok",
+  "tool": "echo_observation",
+  "result": {"observation": "reading 7"},
+  "error": null,
+  "evidence": [{"applies_to": "result.observation",
+                "evidence": {"basis": {"kind": "practice", "note": "Placeholder echo of the caller's own input; no domain source backs it."},
+                             "status": "CHECK"}}],
+  "input_sha256": "390b41208788ba1a60e380839cbbef164c0d5cf34e0b3b3857c659d9a0f4e1e6",
+  "boundary": {"control_action": false, "domain_determination": false, "observation_only": true},
+  "version": "0.1.0"
+}
+```
+
+The bad call (an empty string) comes back with `"isError": true`, `"result": null`,
+`"error": "observation must be a string of 1 to 256 characters"`, and its own
+evidence entry saying which check refused it. The bridge exits 0 when stdin closes.
+The [first-session tutorial](docs/guides/tutorials/first-bridge-session.md) walks
+through this step by step.
+
+## Install and run
+
+You need Python 3.11 or newer (CI uses 3.12). Nothing is installed.
 
 ```sh
 git clone https://github.com/Akilleez-QA/foundation-template
 cd foundation-template
-python -B -m unittest discover -s tests -t .
-python -B tools/build_manifest.py
+python3 -B -m unittest discover -s tests -t .
+python3 -B tools/build_manifest.py
 ```
 
-Requires Python 3.11 or newer; nothing is installed. The tests end with `OK`, and `build_manifest.py` prints the file count, manifest SHA-256 and inventory SHA-256 without changing a clean checkout. To talk to the bridge, follow the [first-session tutorial](docs/guides/tutorials/first-bridge-session.md).
+The tests end with `OK`. `build_manifest.py` prints the file count, the manifest
+SHA-256 and the tool-inventory SHA-256; on a clean checkout it changes nothing.
 
-## What is inside
+## Start a new Foundation
 
-| Tool | Purpose |
-|---|---|
-| `echo_observation` | PLACEHOLDER: returns its validated input as an observation with Evidence |
+The full walk-through is [Start a new Foundation](docs/guides/how-to/start-a-new-foundation.md).
+In short, for a Foundation called `foundation-acoustics`:
 
-## Measured
+1. **Copy and rename.** Clone into `foundation-acoustics`, start a fresh Git
+   history, rename the two packages and replace every `foundation_template` and
+   `foundation-template` with your name. The guide has the exact commands.
+2. **Replace the placeholder tool.** Write your checks in `tools.py`, give each a
+   closed input and output schema in `schemas.py`, and replace the placeholder
+   tests. Keep `run()`, the receipt shape, the bridge and the input-limit tests.
+3. **Adapt the documentation.** Every document in `docs/` is a filled-in example
+   for the template. Edit each one for your subject (the guide has a table of what
+   to change in each file) and change the document code `FTEMPLATE`, the
+   requirement prefix `REQ-TPL` and the gap prefix `GAP-TPL` to your own.
+4. **Generate and check.** Regenerate the tool catalog and manifest, then run the
+   trace check and both test modes until the trace check prints `0 problem(s)`:
 
-The generated [test report](docs/verification/reports/STR-unreleased.md) records the latest local run of the CI commands for main: commit, Python version, per-test results in normal and optimized mode, the trace check and the secret scan. At commit `30c1287` on Linux x86_64 with CPython 3.12.14, `python -B -m unittest discover -s tests -t .` and the same with `-O` each ran 12 tests and passed.
+   ```sh
+   python3 -B tools/gen_docs.py
+   python3 -B tools/build_manifest.py
+   python3 -B tools/check_trace.py
+   python3 -B -m unittest discover -s tests -t .
+   python3 -B -O -m unittest discover -s tests -t .
+   ```
 
-CI runs both modes on Python 3.12, scans history with gitleaks and verifies the source manifest.
+5. **Connect it to a host.** A Cstack adapter pins the three values that
+   `build_manifest.py` prints. The adapter lives in the Cstack repository.
+
+### What a copy inherits
+
+| Part | What you get | What you change |
+|---|---|---|
+| `foundation_template_bridge/` | stdio JSON-RPC bridge with input limits and error codes | The package name; the numeric profile only if you need decimals |
+| `foundation_template/tools.py` | `run()`, receipt shape, Evidence entries, input hash | The tools themselves |
+| `tests/` | Bridge, input-limit, manifest and documentation-trace tests | The placeholder tool tests |
+| `tools/` | Manifest builder, trace check, catalog and report generators | A few constants (prefix, names) |
+| `docs/` | Tutorial, how-to, reference, explanation, and a full set of engineering records | Every document, for your subject |
 
 ## Limitations
 
-- The only tool is a placeholder that echoes its input; it has no domain meaning.
-- The numeric profile is integers only.
-- Several bridge error paths have no test; copies inherit them (see the [requirements](docs/requirements/requirements.md#9-untested-behaviour-gaps)).
+- The only tool is a placeholder that echoes its input; it has no subject meaning.
+- The numeric profile is integers only. A copy that needs decimals must add a
+  bounded decimal parser (foundation-refrigeration has one), with requirements and tests.
+- Several bridge error paths have no test, and copies inherit those gaps
+  ([list](docs/requirements/requirements.md#9-untested-behaviour-gaps)).
+- Version 0.1.0, not yet released or tagged.
 
 Details: [Limitations](docs/guides/explanation/limitations.md).
 
-## Documentation
+## Where to go next
 
-Start at [docs/README.md](docs/README.md): a [tutorial](docs/guides/tutorials/first-bridge-session.md), [Start a new Foundation](docs/guides/how-to/start-a-new-foundation.md), the generated [tool catalog](docs/guides/reference/tool-catalog.md), and the control documents (plan, compliance matrix, requirements, design, interface, data dictionary, test plan, verification matrix, configuration management, assurance record). Copy them with the code.
+- [Tutorial: your first bridge session](docs/guides/tutorials/first-bridge-session.md)
+- [Start a new Foundation](docs/guides/how-to/start-a-new-foundation.md)
+- [Tool catalog](docs/guides/reference/tool-catalog.md): every tool, argument and error code
+- [Interface contract with Cstack](docs/icd/icd-cstack.md)
+- [Documentation index](docs/README.md)
 
 ## Related projects
 
-| Repository | Role | Relation |
-|---|---|---|
-| [cstack](https://github.com/Akilleez-QA/cstack) | Runs Foundations behind pinned adapters under one human approver | Host |
-| [foundation-engine](https://github.com/Akilleez-QA/foundation-engine) | TypeScript and three.js framework for browser games | Foundation |
-| [foundation-math](https://github.com/Akilleez-QA/foundation-math) | Exact mathematical kernels and physics research tools | Foundation |
-| [foundation-film](https://github.com/Akilleez-QA/foundation-film) | Film-production acceptance checks | Foundation |
-| [foundation-refrigeration](https://github.com/Akilleez-QA/foundation-refrigeration) | Refrigeration data and checks | Foundation |
-| [foundation-robotics](https://github.com/Akilleez-QA/foundation-robotics) | Physics checks for motion | Foundation |
-| [foundation-template](https://github.com/Akilleez-QA/foundation-template) | Minimal Foundation to copy for a new domain | Foundation |
-| [endoforge](https://github.com/Akilleez-QA/endoforge) | Workshop for running coding agents with checks and receipts | Tool |
-| [poodo](https://github.com/Akilleez-QA/poodo) | Reasoning skill that shows evidence before it acts | Tool |
+| Repository | Role |
+|---|---|
+| [Cstack](https://github.com/Akilleez-QA/cstack) | Host; runs Foundations from byte-pinned copies under one human approver |
+| [EndoForge](https://github.com/Akilleez-QA/endoforge) | Workshop for running coding agents with checks and receipts |
+| [POODO](https://github.com/Akilleez-QA/poodo) | Reasoning skill that shows evidence before it acts |
+| [foundation-engine](https://github.com/Akilleez-QA/foundation-engine) | Browser games framework, with read-only validators |
+| [foundation-math](https://github.com/Akilleez-QA/foundation-math) | Exact checks of mathematical claims and certificates |
+| [foundation-film](https://github.com/Akilleez-QA/foundation-film) | Film-production acceptance checks |
+| [foundation-refrigeration](https://github.com/Akilleez-QA/foundation-refrigeration) | Refrigeration data and checks |
+| [foundation-robotics](https://github.com/Akilleez-QA/foundation-robotics) | Motion checks for robots |
+| foundation-template (this repository) | Minimal Foundation to copy for a new subject |
 
 ## Layout
 
 | Path | Contents |
 |---|---|
-| `foundation_template/` | Domain package |
+| `foundation_template/` | Tool functions and receipts |
 | `foundation_template_bridge/` | stdio JSON-RPC bridge and schemas |
-| `tests/` | Unit and bridge tests |
-| `tools/` | Manifest, trace-check and documentation generators |
-| `docs/` | Plan, requirements, design, interface, data dictionary, verification, configuration, releases, assurance, guides |
-| `SOURCE-MANIFEST.json` | SHA-256 of every shipped source file outside `.github/` |
+| `tests/` | Unit, bridge, input-limit and documentation-trace tests |
+| `tools/` | Manifest builder, trace check, documentation and report generators |
+| `docs/` | Guides and engineering records |
+| `SOURCE-MANIFEST.json` | SHA-256 of every shipped file outside `.github/` |
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
-## Security
+## Engineering records
 
-See [SECURITY.md](SECURITY.md).
+The documentation set follows the Cstack family documentation standard, organised
+after NASA software documentation guidance and tailored for a small open-source
+project. Copies inherit it. Classification: self-assessed Class E analog, not
+safety-critical; not a NASA compliance determination (see the
+[software management plan](docs/plan/software-management-plan.md#1-software-classification-self-assessed)).
+
+- [Software management plan](docs/plan/software-management-plan.md) and [compliance matrix](docs/plan/compliance-matrix.md)
+- [Requirements](docs/requirements/requirements.md), [design](docs/architecture/architecture.md) and [data dictionary](docs/data/data-dictionary.md)
+- [Test plan](docs/verification/test-plan.md), [verification matrix](docs/verification/verification-matrix.md) and the generated [test report](docs/verification/reports/STR-unreleased.md), which records the latest local run of the CI commands
+- [Configuration management](docs/configuration/configuration-management.md), [version descriptions](docs/releases/README.md) and [assurance record](docs/assurance/assurance-record.md)
+- [All control documents with IDs](docs/README.md#engineering-records)
+
+CI runs the tests in normal and optimized mode on Python 3.12, scans the history
+with gitleaks and checks that the source manifest is up to date.
 
 ## License
 
