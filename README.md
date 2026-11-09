@@ -14,14 +14,16 @@ own subject, with the protocol, receipts, tests and documentation already in pla
 A Foundation is a read-only checker for one subject, such as maths, refrigeration
 or film. Another program, the producer (a person, a script or an AI agent), makes
 a result. The Foundation examines it and returns an observation with the evidence
-behind it. It never changes anything, never controls equipment and never makes
-the final decision. Producers don't grade their own work; a separate Foundation
-does.
+behind it. It never changes anything and never controls equipment. The final
+decision stays with a person or with the program that called it. Producers don't
+grade their own work; a separate Foundation does.
 
-A Foundation runs on its own: any program that writes the protocol to its stdin
-can use it. [Cstack](https://github.com/Akilleez-QA/cstack) is the family's host
-(the family's code name is Mjölnir). It runs each Foundation from a copy whose
-file hashes it has pinned, so the checker can't be changed without anyone noticing.
+A Foundation runs on its own: any program that writes requests to its stdin can
+use it, for example a CI job that pipes a producer's output through it and fails
+on a tool error. [Cstack](https://github.com/Akilleez-QA/cstack) (code name
+Mjölnir) is a host program built around Foundations. It runs each one from a
+copy whose file hashes it has pinned, so the checker can't be changed without
+anyone noticing.
 
 For a real one, look at
 [foundation-refrigeration](https://github.com/Akilleez-QA/foundation-refrigeration):
@@ -29,7 +31,8 @@ its `saturation_pressure` tool takes a refrigerant name and a temperature with a
 unit, and returns the saturation pressure with evidence naming the property table
 it was read from and the unit standard it cites. The
 work is always passed inline as JSON arguments; a Foundation never reads files or
-the network on the caller's behalf.
+the network on the caller's behalf. Temperatures need decimals, so that
+Foundation replaced the template's integers-only parser with a bounded decimal one.
 
 ## Why use this template
 
@@ -54,8 +57,8 @@ The bridge (`foundation_template_bridge/`) reads one request per line and reject
 anything too large or too deeply nested. Its numeric profile is integers only:
 every JSON number must be a whole number of at most 15 digits, and decimals are
 refused. It requires `initialize` before any tool call. The method names
-(`tools/list`, `tools/call`) look like MCP, but this is its own small protocol,
-`foundation-template-jsonrpc/1`, and the bridge says `"mcpCompatible": false`. It then calls a tool function in
+(`tools/list`, `tools/call`) look like MCP, but it is a smaller protocol of its
+own, `foundation-template-jsonrpc/1`, and an MCP client cannot talk to it directly. It then calls a tool function in
 `foundation_template/tools.py`. Every reply carries a receipt: the result or the
 error, the evidence behind it, a SHA-256 hash of the exact arguments, and a
 `boundary` block stating that this is an observation only, not a determination or
@@ -108,6 +111,7 @@ through this step by step.
 ## Install and run
 
 You need Python 3.11 or newer as `python3` (CI uses 3.12). Nothing is installed.
+`-B` stops Python writing `.pyc` cache files into the tree.
 
 ```sh
 git clone https://github.com/Akilleez-QA/foundation-template
@@ -137,8 +141,6 @@ In short, for a Foundation called `foundation-acoustics`:
    grep -rlI --exclude-dir=.git -e foundation_template -e foundation-template . \
      | xargs sed -i -e 's/foundation_template/foundation_acoustics/g' -e 's/foundation-template/foundation-acoustics/g'
    ```
-
-   The tests pass straight after this step.
 2. **Replace the placeholder tool.** Write your checks in
    `foundation_acoustics/tools.py` (the tool functions; the top-level `tools/`
    folder holds build scripts), give each a closed input and output schema in
@@ -148,7 +150,8 @@ In short, for a Foundation called `foundation-acoustics`:
    to change in each file). Rename the ID prefixes to your own: `FTEMPLATE` on
    document IDs, `REQ-TPL` on requirements and `GAP-TPL` on known untested gaps.
 4. **Generate and check.** Regenerate the tool catalog and `SOURCE-MANIFEST.json`,
-   then run the trace check and both test modes. The trace check confirms that
+   then run the trace check and both test modes (`-O` repeats the tests with
+   assertions stripped, as CI does). The trace check confirms that
    every requirement has a test, every test has a requirement and every link
    works; repeat until it prints `0 problem(s)`:
 
@@ -161,7 +164,7 @@ In short, for a Foundation called `foundation-acoustics`:
    ```
 
 5. **Connect it to a host.** Any program can drive the bridge directly. To run
-   it under Cstack, add an adapter in the Cstack repository that pins the three
+   it under Cstack, propose an adapter to the Cstack repository that pins the three
    values `build_manifest.py` prints: `files` (the file count), `sha256` (the
    manifest hash) and `inventory_sha256` (the tool-inventory hash).
 
@@ -241,5 +244,9 @@ CI runs the tests in normal and optimized mode on Python 3.12, scans the history
 with gitleaks and checks that the source manifest is up to date.
 
 ## License
+
+Copies start from this code, so they carry the same license unless you obtain a
+commercial one.
+
 
 This project is available under the GNU General Public License v3.0 only (GPL-3.0-only). If you want to use it to create a product or service under different terms, commercial licenses are available from Refrigeration.AI. Contact craig@nh3.biz.
