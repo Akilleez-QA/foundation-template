@@ -30,11 +30,14 @@ program built around Foundations. It keeps a copy of each one with every file's
 hash pinned, and its adapter refuses to start a Foundation whose files no longer
 match, so nobody can quietly change the checker.
 
-For a real one, look at
+A check takes one of two shapes: a verdict on a result you pass in, or an
+independent reference value that the caller compares with the producer's. For the
+second kind, look at
 [foundation-refrigeration](https://github.com/Akilleez-QA/foundation-refrigeration):
 its `saturation_pressure` tool takes a refrigerant name and a temperature with a
 unit, and returns the saturation pressure with evidence naming the property table
-it was read from and the unit standard it cites. The work is always passed inline
+it was read from and the unit standard it cites, so a producer's figure can be
+checked against it. The work is always passed inline
 as JSON arguments; a Foundation never reads files or the network on the caller's
 behalf.
 
@@ -64,8 +67,8 @@ carries a receipt: the result or the error, the evidence behind it, a SHA-256 ha
 of the exact arguments, and a `boundary` block stating that this is an observation
 only, not a determination or a control action. A bad argument still gets a
 receipt, marked as a tool error. Around the receipt, `assessment` names the
-outcome, and `formal_proof` and `runtime_goal_acceptance` are always `false`: a
-receipt is never a proof or an acceptance.
+outcome, and `formal_proof` and `runtime_goal_acceptance` are always `false`,
+stating outright that a receipt is never a proof or an acceptance.
 
 Two deliberate defaults:
 
@@ -237,7 +240,7 @@ Details: [Limitations](docs/guides/explanation/limitations.md).
 | [Cstack](https://github.com/Akilleez-QA/cstack) | Host; runs Foundations from byte-pinned copies |
 | [EndoForge](https://github.com/Akilleez-QA/endoforge) | Workshop for running coding agents with checks and receipts |
 | [POODO](https://github.com/Akilleez-QA/poodo) | Reasoning skill that shows evidence before it acts |
-| [foundation-engine](https://github.com/Akilleez-QA/foundation-engine) | Browser games framework, with read-only validators |
+| [foundation-engine](https://github.com/Akilleez-QA/foundation-engine) | Browser games framework; Cstack uses its two read-only validators as a Foundation |
 | [foundation-math](https://github.com/Akilleez-QA/foundation-math) | Exact checks of mathematical claims and certificates |
 | [foundation-film](https://github.com/Akilleez-QA/foundation-film) | Film-production acceptance checks |
 | [foundation-refrigeration](https://github.com/Akilleez-QA/foundation-refrigeration) | Refrigeration data and checks |
