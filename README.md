@@ -54,11 +54,11 @@ install, licensed GPL-3.0-only, and copies inherit that license (see [License](#
 ## How it works
 
 ```mermaid
-flowchart LR
-    H["Host<br/>Cstack, a script or you"] -->|"one JSON-RPC request per line on stdin"| B["Bridge<br/>size, depth and type limits;<br/>initialize first"]
-    B -->|"tool name + arguments"| T["Your tool<br/>checks the arguments,<br/>computes an observation"]
-    T --> R["Receipt<br/>result or error, Evidence,<br/>input hash, read-only boundary"]
-    R -->|"one JSON response per line on stdout"| H
+flowchart TD
+    H["Host<br/>Cstack, a script or you"] -->|"request on stdin"| B["Bridge<br/>checks limits"]
+    B -->|"tool + arguments"| T["Your tool<br/>computes an observation"]
+    T --> R["Receipt<br/>result or error, evidence"]
+    R -->|"reply on stdout"| H
 ```
 
 The bridge (`foundation_template_bridge/`) reads one request per line, rejects
