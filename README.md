@@ -31,7 +31,7 @@ Requires Python 3.11 or newer; nothing is installed. The tests end with `OK`, an
 
 ## Measured
 
-The generated [test report](docs/verification/reports/STR-unreleased.md) records the latest local run of the CI commands for main: commit, Python version, per-test results in normal and optimized mode, the trace check and the secret scan.
+The generated [test report](docs/verification/reports/STR-unreleased.md) records the latest local run of the CI commands for main: commit, Python version, per-test results in normal and optimized mode, the trace check and the secret scan. At commit `30c1287` on Linux x86_64 with CPython 3.12.14, `python -B -m unittest discover -s tests -t .` and the same with `-O` each ran 12 tests and passed.
 
 CI runs both modes on Python 3.12, scans history with gitleaks and verifies the source manifest.
 
