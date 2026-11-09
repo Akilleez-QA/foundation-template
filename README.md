@@ -23,6 +23,14 @@ can use it. [Cstack](https://github.com/Akilleez-QA/cstack) is the family's host
 (the family's code name is Mjölnir). It runs each Foundation from a copy whose
 file hashes it has pinned, so the checker can't be changed without anyone noticing.
 
+For a real one, look at
+[foundation-refrigeration](https://github.com/Akilleez-QA/foundation-refrigeration):
+its `saturation_pressure` tool takes a refrigerant name and a temperature with a
+unit, and returns the saturation pressure with evidence naming the property table
+it was read from and the unit standard it cites. The
+work is always passed inline as JSON arguments; a Foundation never reads files or
+the network on the caller's behalf.
+
 ## Why use this template
 
 Every Foundation needs the same plumbing before it can check anything: a way for
@@ -42,14 +50,20 @@ flowchart LR
     R -->|"one JSON response per line on stdout"| H
 ```
 
-The bridge (`foundation_template_bridge/`) reads one request per line, rejects
-anything too large, too deep or not in its numeric profile (integers only), and
-requires `initialize` before any tool call. It then calls a tool function in
+The bridge (`foundation_template_bridge/`) reads one request per line and rejects
+anything too large or too deeply nested. Its numeric profile is integers only:
+every JSON number must be a whole number of at most 15 digits, and decimals are
+refused. It requires `initialize` before any tool call. The method names
+(`tools/list`, `tools/call`) look like MCP, but this is its own small protocol,
+`foundation-template-jsonrpc/1`, and the bridge says `"mcpCompatible": false`. It then calls a tool function in
 `foundation_template/tools.py`. Every reply carries a receipt: the result or the
 error, the evidence behind it, a SHA-256 hash of the exact arguments, and a
 `boundary` block stating that this is an observation only, not a determination or
 a control action. A bad argument still gets a receipt; it is marked as a tool
-error rather than dropped.
+error rather than dropped. Each evidence entry says where a value came from
+(`basis.kind`; here `practice`, the tool's own rule rather than a cited source)
+and its review state (`status`; here `CHECK`, recorded but not approved by a
+qualified person).
 
 ## Example
 
@@ -102,27 +116,41 @@ python3 -B -m unittest discover -s tests -t .
 python3 -B tools/build_manifest.py
 ```
 
-The tests end with `OK`. `build_manifest.py` prints the file count, the manifest
-SHA-256 and the tool-inventory SHA-256; on a clean checkout it changes nothing.
+The tests end with `OK`. `build_manifest.py` rewrites `SOURCE-MANIFEST.json` (a
+SHA-256 for every shipped file) and prints the file count, the manifest hash and
+the tool-inventory hash; on a clean checkout the file comes out unchanged.
 
 ## Start a new Foundation
 
 The full walk-through is [Start a new Foundation](docs/guides/how-to/start-a-new-foundation.md).
 In short, for a Foundation called `foundation-acoustics`:
 
-1. **Copy and rename.** Clone into `foundation-acoustics`, start a fresh Git
-   history, rename the two packages (`foundation_template` and
-   `foundation_template_bridge`) and replace every `foundation_template` and
-   `foundation-template` with your name. The guide has the exact commands.
-2. **Replace the placeholder tool.** Write your checks in `tools.py`, give each a
-   closed input and output schema in `schemas.py`, and replace the placeholder
-   tests. Keep `run()`, the receipt shape, the bridge and the input-limit tests.
+1. **Copy and rename.** Start a fresh history and replace the template's name
+   everywhere:
+
+   ```sh
+   git clone https://github.com/Akilleez-QA/foundation-template foundation-acoustics
+   cd foundation-acoustics
+   rm -rf .git && git init
+   mv foundation_template foundation_acoustics
+   mv foundation_template_bridge foundation_acoustics_bridge
+   grep -rlI --exclude-dir=.git -e foundation_template -e foundation-template . \
+     | xargs sed -i -e 's/foundation_template/foundation_acoustics/g' -e 's/foundation-template/foundation-acoustics/g'
+   ```
+
+   The tests pass straight after this step.
+2. **Replace the placeholder tool.** Write your checks in
+   `foundation_acoustics/tools.py` (the tool functions; the top-level `tools/`
+   folder holds build scripts), give each a closed input and output schema in
+   `foundation_acoustics_bridge/schemas.py`, and replace the placeholder tests. Keep `run()`, the receipt shape, the bridge and the input-limit tests.
 3. **Adapt the documentation.** Every document in `docs/` is a filled-in example
    for the template. Edit each one for your subject (the guide has a table of what
-   to change in each file) and change the document code `FTEMPLATE`, the
-   requirement prefix `REQ-TPL` and the gap prefix `GAP-TPL` to your own.
-4. **Generate and check.** Regenerate the tool catalog and manifest, then run the
-   trace check and both test modes until the trace check prints `0 problem(s)`:
+   to change in each file). Rename the ID prefixes to your own: `FTEMPLATE` on
+   document IDs, `REQ-TPL` on requirements and `GAP-TPL` on known untested gaps.
+4. **Generate and check.** Regenerate the tool catalog and `SOURCE-MANIFEST.json`,
+   then run the trace check and both test modes. The trace check confirms that
+   every requirement has a test, every test has a requirement and every link
+   works; repeat until it prints `0 problem(s)`:
 
    ```sh
    python3 -B tools/gen_docs.py
@@ -170,7 +198,7 @@ Details: [Limitations](docs/guides/explanation/limitations.md).
 
 | Repository | Role |
 |---|---|
-| [Cstack](https://github.com/Akilleez-QA/cstack) | Host; runs Foundations from byte-pinned copies under one human approver |
+| [Cstack](https://github.com/Akilleez-QA/cstack) | Host; runs Foundations from byte-pinned copies |
 | [EndoForge](https://github.com/Akilleez-QA/endoforge) | Workshop for running coding agents with checks and receipts |
 | [POODO](https://github.com/Akilleez-QA/poodo) | Reasoning skill that shows evidence before it acts |
 | [foundation-engine](https://github.com/Akilleez-QA/foundation-engine) | Browser games framework, with read-only validators |
