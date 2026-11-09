@@ -20,19 +20,18 @@ grade their own work; a separate Foundation does.
 
 A Foundation runs on its own: any program that writes requests to its stdin can
 use it, for example a CI job that pipes a producer's output through it and fails
-on a tool error. [Cstack](https://github.com/Akilleez-QA/cstack) (code name
-Mjölnir) is a host program built around Foundations. It runs each one from a
-copy whose file hashes it has pinned, so the checker can't be changed without
-anyone noticing.
+on a tool error. [Cstack](https://github.com/Akilleez-QA/cstack) is a host
+program built around Foundations. It keeps a copy of each one with every file's
+hash pinned, and its adapter refuses to start a Foundation whose files no longer
+match, so nobody can quietly change the checker.
 
 For a real one, look at
 [foundation-refrigeration](https://github.com/Akilleez-QA/foundation-refrigeration):
 its `saturation_pressure` tool takes a refrigerant name and a temperature with a
 unit, and returns the saturation pressure with evidence naming the property table
-it was read from and the unit standard it cites. The
-work is always passed inline as JSON arguments; a Foundation never reads files or
-the network on the caller's behalf. Temperatures need decimals, so that
-Foundation replaced the template's integers-only parser with a bounded decimal one.
+it was read from and the unit standard it cites. The work is always passed inline
+as JSON arguments; a Foundation never reads files or the network on the caller's
+behalf.
 
 ## Why use this template
 
@@ -53,20 +52,26 @@ flowchart LR
     R -->|"one JSON response per line on stdout"| H
 ```
 
-The bridge (`foundation_template_bridge/`) reads one request per line and rejects
-anything too large or too deeply nested. Its numeric profile is integers only:
-every JSON number must be a whole number of at most 15 digits, and decimals are
-refused. It requires `initialize` before any tool call. The method names
-(`tools/list`, `tools/call`) look like MCP, but it is a smaller protocol of its
-own, `foundation-template-jsonrpc/1`, and an MCP client cannot talk to it directly. It then calls a tool function in
-`foundation_template/tools.py`. Every reply carries a receipt: the result or the
-error, the evidence behind it, a SHA-256 hash of the exact arguments, and a
-`boundary` block stating that this is an observation only, not a determination or
-a control action. A bad argument still gets a receipt; it is marked as a tool
-error rather than dropped. Each evidence entry says where a value came from
-(`basis.kind`; here `practice`, the tool's own rule rather than a cited source)
-and its review state (`status`; here `CHECK`, recorded but not approved by a
-qualified person).
+The bridge (`foundation_template_bridge/`) reads one request per line, rejects
+anything too large or too deeply nested, and requires `initialize` before any tool
+call. Then it calls a tool function in `foundation_template/tools.py`. Every reply
+carries a receipt: the result or the error, the evidence behind it, a SHA-256 hash
+of the exact arguments, and a `boundary` block stating that this is an observation
+only, not a determination or a control action. A bad argument still gets a
+receipt, marked as a tool error.
+
+Two deliberate defaults:
+
+- **Integers only.** Every JSON number must be a whole number of at most 15
+  digits. It is the smallest safe default; a copy that needs decimals adds a
+  bounded decimal parser, as foundation-refrigeration did.
+- **Not MCP.** The method names (`tools/list`, `tools/call`) look like MCP, but
+  the protocol is `foundation-template-jsonrpc/1`: smaller, with fixed limits, and
+  `initialize` must name that exact version.
+
+Each evidence entry says where a value came from (`basis.kind`; here `practice`,
+the tool's own rule rather than a cited source) and its review state (`status`;
+here `CHECK`, recorded but not approved by a qualified person).
 
 ## Example
 
@@ -83,30 +88,43 @@ printf '%s\n' \
   | python3 -B -m foundation_template_bridge
 ```
 
-The good call's receipt (pretty-printed; the bridge writes one line per reply):
+The bridge writes one line per reply. Here is the good call's reply,
+pretty-printed with keys reordered:
 
 ```json
 {
-  "status": "ok",
-  "tool": "echo_observation",
-  "result": {"observation": "reading 7"},
-  "error": null,
-  "evidence": [{"applies_to": "result.observation",
-                "evidence": {"basis": {"kind": "practice", "note": "Placeholder echo of the caller's own input; no domain source backs it."},
-                             "status": "CHECK"}}],
-  "input_sha256": "390b41208788ba1a60e380839cbbef164c0d5cf34e0b3b3857c659d9a0f4e1e6",
-  "boundary": {"control_action": false, "domain_determination": false, "observation_only": true},
-  "version": "0.1.0"
+  "id": 2,
+  "jsonrpc": "2.0",
+  "result": {
+    "isError": false,
+    "structuredContent": {
+      "tool": "echo_observation",
+      "assessment": "observation_echoed",
+      "formal_proof": false,
+      "runtime_goal_acceptance": false,
+      "receipt": {
+        "status": "ok",
+        "tool": "echo_observation",
+        "version": "0.1.0",
+        "result": {"observation": "reading 7"},
+        "error": null,
+        "evidence": [{"applies_to": "result.observation",
+                      "evidence": {"basis": {"kind": "practice", "note": "Placeholder echo of the caller's own input; no domain source backs it."},
+                                   "status": "CHECK"}}],
+        "input_sha256": "390b41208788ba1a60e380839cbbef164c0d5cf34e0b3b3857c659d9a0f4e1e6",
+        "boundary": {"control_action": false, "domain_determination": false, "observation_only": true}
+      }
+    }
+  }
 }
 ```
 
-Each reply's `result` holds `isError` and `structuredContent`; the receipt sits
-inside `structuredContent`. The bad call (an empty string) comes back with
-`"isError": true`, a receipt with `"result": null`,
-`"error": "observation must be a string of 1 to 256 characters"`, and its own
-evidence entry saying which check refused it. The bridge exits 0 when stdin closes.
-The [first-session tutorial](docs/guides/tutorials/first-bridge-session.md) walks
-through this step by step.
+The bad call (an empty string) comes back with `"isError": true`, a receipt with
+`"result": null` and `"error": "observation must be a string of 1 to 256 characters"`,
+and its own evidence entry saying which check refused it. The first reply, to
+`initialize`, lists the bridge's limits and methods. The bridge exits 0 when stdin
+closes. The [first-session tutorial](docs/guides/tutorials/first-bridge-session.md)
+walks through this step by step.
 
 ## Install and run
 
@@ -141,10 +159,16 @@ In short, for a Foundation called `foundation-acoustics`:
    grep -rlI --exclude-dir=.git -e foundation_template -e foundation-template . \
      | xargs sed -i -e 's/foundation_template/foundation_acoustics/g' -e 's/foundation-template/foundation-acoustics/g'
    ```
+
+   The rename also changes GitHub links and the CI badge to your new repository
+   name, and the family table's own `foundation-template` row, which you should
+   put back.
+
 2. **Replace the placeholder tool.** Write your checks in
    `foundation_acoustics/tools.py` (the tool functions; the top-level `tools/`
    folder holds build scripts), give each a closed input and output schema in
-   `foundation_acoustics_bridge/schemas.py`, and replace the placeholder tests. Keep `run()`, the receipt shape, the bridge and the input-limit tests.
+   `foundation_acoustics_bridge/schemas.py`, and replace the placeholder tests.
+   Keep `run()`, the receipt shape, the bridge and the input-limit tests.
 3. **Adapt the documentation.** Every document in `docs/` is a filled-in example
    for the template. Edit each one for your subject (the guide has a table of what
    to change in each file). Rename the ID prefixes to your own: `FTEMPLATE` on
@@ -164,8 +188,10 @@ In short, for a Foundation called `foundation-acoustics`:
    ```
 
 5. **Connect it to a host.** Any program can drive the bridge directly. To run
-   it under Cstack, propose an adapter to the Cstack repository that pins the three
-   values `build_manifest.py` prints: `files` (the file count), `sha256` (the
+   it under Cstack, open a pull request on the Cstack repository that vendors a
+   copy of your repository, adds an adapter beside the existing ones in its
+   `adapters/` folder, and records the three values `build_manifest.py` prints in
+   its `contracts/SOURCE-PINS.json`: `files` (the file count), `sha256` (the
    manifest hash) and `inventory_sha256` (the tool-inventory hash).
 
 ### What a copy inherits
@@ -245,8 +271,8 @@ with gitleaks and checks that the source manifest is up to date.
 
 ## License
 
-Copies start from this code, so they carry the same license unless you obtain a
-commercial one.
+Copyright © 2026 Refrigeration.AI. Copies start from this code, so they carry the
+same license unless you obtain a commercial one.
 
 
 This project is available under the GNU General Public License v3.0 only (GPL-3.0-only). If you want to use it to create a product or service under different terms, commercial licenses are available from Refrigeration.AI. Contact craig@nh3.biz.
