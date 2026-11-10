@@ -20,8 +20,8 @@ SECOND = "test_b (tests.test_bridge.BridgeTests.test_b) ... "
 
 
 def suite_stderr(lines, ran, verdict="OK"):
-    return "\n".join(lines) + "\n\n" + "-" * 70 + "\nRan %d test%s in 0.010s\n\n%s\n" % (
-        ran, "" if ran == 1 else "s", verdict)
+    plural = "" if ran == 1 else "s"
+    return "\n".join(lines) + "\n\n" + "-" * 70 + f"\nRan {ran} test{plural} in 0.010s\n\n{verdict}\n"
 
 
 def completed(command, returncode=0, stdout="", stderr=""):
@@ -40,7 +40,7 @@ class Harness:
         self.gen_docs = gen_docs
         self.diff = diff
 
-    def run(self, command, *args, **kwargs):
+    def run(self, command, *_args, **_kwargs):
         if command[0] == "gitleaks":
             return completed(command, self.gitleaks[0], self.gitleaks[1])
         if "unittest" in command:
@@ -54,7 +54,7 @@ class Harness:
         if command[0] == "git" and tuple(command[1:]) in GIT:
             self.git_calls.append(tuple(command[1:]))
             return completed(command, 0, GIT[tuple(command[1:])])
-        raise AssertionError("unexpected subprocess in report test: %r" % (command,))
+        raise AssertionError(f"unexpected subprocess in report test: {command!r}")
 
     def which(self, name):
         if name == "gitleaks":
@@ -87,7 +87,7 @@ class Harness:
 
 
 class GenerateReportsTests(unittest.TestCase):
-    def assertFailed(self, harness):
+    def assert_failed(self, harness):
         code, out, report = harness.main()
         self.assertEqual(code, 1, out)
         self.assertIn('"passed": false', out)
@@ -100,36 +100,36 @@ class GenerateReportsTests(unittest.TestCase):
         self.assertIn('"passed": true', out)
 
     def test_main_exits_nonzero_when_gitleaks_finds_a_secret(self):
-        report = self.assertFailed(Harness(gitleaks=(1, "leaks found: 1")))
+        report = self.assert_failed(Harness(gitleaks=(1, "leaks found: 1")))
         self.assertIn("leaks found: 1", report.split("## 4.")[1])
 
     def test_failing_gate_fails_the_report(self):
-        self.assertFailed(Harness(gen_docs=1))
-        self.assertFailed(Harness(diff=1))
+        self.assert_failed(Harness(gen_docs=1))
+        self.assert_failed(Harness(diff=1))
 
     def test_gate_not_run_fails_the_report(self):
-        report = self.assertFailed(Harness(gitleaks_installed=False))
+        report = self.assert_failed(Harness(gitleaks_installed=False))
         self.assertIn("not run", report.split("## 4.")[1])
 
     def test_skipped_test_fails_the_report(self):
         stderr = suite_stderr([OK, SECOND + "skipped 'required check disabled'"], 2, "OK (skipped=1)")
-        report = self.assertFailed(Harness(suite=(0, stderr)))
+        report = self.assert_failed(Harness(suite=(0, stderr)))
         self.assertIn("skipped", report.split("## 4.")[1])
 
     def test_expected_failure_fails_the_report(self):
         stderr = suite_stderr([OK, SECOND + "expected failure"], 2, "OK (expected failures=1)")
-        self.assertFailed(Harness(suite=(0, stderr)))
+        self.assert_failed(Harness(suite=(0, stderr)))
 
     def test_unparsed_test_outcome_fails_the_report(self):
         stderr = suite_stderr([OK, SECOND + "\nsome output\nok"], 2)
-        self.assertFailed(Harness(suite=(0, stderr)))
+        self.assert_failed(Harness(suite=(0, stderr)))
 
     def test_trace_problem_fails_the_report(self):
-        report = self.assertFailed(Harness(trace_problems=["VM: example problem"]))
+        report = self.assert_failed(Harness(trace_problems=["VM: example problem"]))
         self.assertIn("VM: example problem", report.split("## 4.")[1])
 
     def test_empty_suite_fails_the_report(self):
-        self.assertFailed(Harness(suite=(0, suite_stderr([], 0, "NO TESTS RAN"))))
+        self.assert_failed(Harness(suite=(0, suite_stderr([], 0, "NO TESTS RAN"))))
 
 
 class HermeticReportTests(unittest.TestCase):
@@ -146,7 +146,7 @@ class HermeticReportTests(unittest.TestCase):
         (root / ".git" / "HEAD").write_text("ref: refs/heads/main\n")
         return root
 
-    def assertVerdicts(self, root):
+    def assert_verdicts(self, root):
         harness = Harness(root=root)
         code, out, report = harness.main()
         self.assertEqual(code, 0, out + report)
@@ -164,11 +164,11 @@ class HermeticReportTests(unittest.TestCase):
 
     def test_verdict_without_git_directory(self):
         with tempfile.TemporaryDirectory() as tmp:
-            self.assertVerdicts(self.export(tmp))
+            self.assert_verdicts(self.export(tmp))
 
     def test_verdict_in_empty_repository(self):
         with tempfile.TemporaryDirectory() as tmp:
-            self.assertVerdicts(self.empty_repository(tmp))
+            self.assert_verdicts(self.empty_repository(tmp))
 
 
 if __name__ == "__main__":

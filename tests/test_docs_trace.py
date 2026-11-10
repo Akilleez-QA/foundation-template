@@ -1,11 +1,11 @@
 import importlib.util
 import json
-from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -31,7 +31,7 @@ class DocumentationTraceTests(unittest.TestCase):
                 (copy / name).parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(ROOT / name, copy / name)
             proc = subprocess.run([sys.executable, "-B", "tools/check_trace.py"], cwd=copy, capture_output=True,
-                                  text=True, timeout=60)
+                                  text=True, timeout=60, check=False)
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
 
     def test_generated_reference_documents_are_current(self):

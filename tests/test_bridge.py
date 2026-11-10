@@ -2,10 +2,10 @@ import hashlib
 import io
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from foundation_template.tools import BOUNDARY, TOOL_NAMES, input_sha256
@@ -19,7 +19,7 @@ INIT = {"jsonrpc": "2.0", "id": "init", "method": "initialize", "params": {"prot
 def session(*frames, argv=()):
     raw = b"".join((f if type(f) is bytes else json.dumps(f).encode()) + b"\n" for f in frames)
     proc = subprocess.run([sys.executable, "-B", "-m", "foundation_template_bridge", *argv], cwd=ROOT, input=raw,
-                          capture_output=True, timeout=30)
+                          capture_output=True, timeout=30, check=False)
     return proc, [json.loads(line) for line in proc.stdout.splitlines()]
 
 
@@ -80,7 +80,7 @@ LIST = {"jsonrpc": "2.0", "id": 2, "method": "tools/list"}
 
 
 class FailingSink:
-    def write(self, data):
+    def write(self, _data):
         raise BrokenPipeError(32, "Broken pipe")
 
     def flush(self):
@@ -165,7 +165,7 @@ class GapTests(unittest.TestCase):
         self.assertEqual((last["id"], last["error"]["code"]), (None, -32002))
         self.assertEqual(serve(io.BytesIO(json.dumps(PING).encode() + b"\n"), FailingSink()), 2)
         proc = subprocess.run([sys.executable, "-B", "-m", "foundation_template_bridge"], cwd=ROOT,
-                              input=json.dumps(PING).encode(), capture_output=True, timeout=30)
+                              input=json.dumps(PING).encode(), capture_output=True, timeout=30, check=False)
         self.assertEqual(proc.returncode, 2)
         self.assertEqual(json.loads(proc.stdout)["error"]["code"], -32002)
         read_end, write_end = os.pipe()
@@ -173,7 +173,7 @@ class GapTests(unittest.TestCase):
         try:
             proc = subprocess.run([sys.executable, "-B", "-m", "foundation_template_bridge"], cwd=ROOT,
                                   input=json.dumps(PING).encode() + b"\n", stdout=write_end,
-                                  stderr=subprocess.PIPE, timeout=30)
+                                  stderr=subprocess.PIPE, timeout=30, check=False)
         finally:
             os.close(write_end)
         self.assertEqual((proc.returncode, proc.stderr), (2, b""))

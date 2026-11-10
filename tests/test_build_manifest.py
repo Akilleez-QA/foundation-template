@@ -1,11 +1,11 @@
 import hashlib
 import json
-from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
+from pathlib import Path
 
 from foundation_template import __version__
 from foundation_template_bridge.schemas import tool_definitions
@@ -30,7 +30,7 @@ class ManifestToolTests(unittest.TestCase):
 
     def build(self, *argv):
         proc = subprocess.run([sys.executable, "-B", "tools/build_manifest.py", *argv], cwd=self.copy,
-                              capture_output=True, timeout=60)
+                              capture_output=True, timeout=60, check=False)
         self.assertEqual((proc.returncode, proc.stderr), (0, b""))
         return proc.stdout
 

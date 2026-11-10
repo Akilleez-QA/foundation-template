@@ -6,6 +6,7 @@ import sys
 
 from foundation_template import __version__
 from foundation_template.tools import TOOL_NAMES, run
+
 from .schemas import tool_definitions
 
 PROTOCOL = "foundation-template-jsonrpc/1"
@@ -35,7 +36,7 @@ def _integer(token):
     return int(token)
 
 
-def _no_float(token):
+def _no_float(_token):
     raise WireError(-32700, "Only bounded integers are in this numeric profile")
 
 
@@ -169,7 +170,7 @@ def serve(source, sink) -> int:
                 sink.write(encode_response(response))
                 sink.flush()
         return 0
-    except (BrokenPipeError, OSError):
+    except OSError:
         return 2
 
 

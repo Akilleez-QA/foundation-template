@@ -43,7 +43,7 @@ class InputLimitTests(unittest.TestCase):
     def test_req_tpl_007_nodes(self):
         value = [None] * (LIMITS["jsonNodes"] - 1)
         self.assertEqual(decode_frame(json.dumps(value).encode()), value)
-        self.assert_limit_rejected(json.dumps(value + [None]).encode())
+        self.assert_limit_rejected(json.dumps([*value, None]).encode())
 
     def test_req_tpl_007_string_characters(self):
         text = "x" * LIMITS["stringCharacters"]

@@ -24,11 +24,15 @@ def requirements(text):
         if match:
             current = match.group(1)
             found[current] = {"name": match.group(2), "lines": []}
-        elif line.startswith("## ") or line.startswith("### "):
+        elif line.startswith(("## ", "### ")):
             current = None
         elif current:
             found[current]["lines"].append(line)
     return found
+
+
+def refs_in(text):
+    return [f"{path}::{cls}.{name}" for path, cls, name in TEST_REF.findall(text)]
 
 
 def collected_tests():
@@ -37,9 +41,8 @@ def collected_tests():
         tree = ast.parse(path.read_text())
         for node in tree.body:
             if isinstance(node, ast.ClassDef):
-                for item in node.body:
-                    if isinstance(item, ast.FunctionDef) and item.name.startswith("test_"):
-                        tests.add("tests/%s::%s.%s" % (path.name, node.name, item.name))
+                tests.update(f"tests/{path.name}::{node.name}.{item.name}" for item in node.body
+                             if isinstance(item, ast.FunctionDef) and item.name.startswith("test_"))
     return tests
 
 
@@ -79,7 +82,7 @@ def anchors(path):
             base = slug(match.group(1))
             number = counts.get(base, 0)
             counts[base] = number + 1
-            found.add(base if number == 0 else "%s-%d" % (base, number))
+            found.add(base if number == 0 else f"{base}-{number}")
     return found
 
 
@@ -110,9 +113,9 @@ def dead_links():
                 if not resolved.exists() and outside_distribution(resolved):
                     continue
                 if not resolved.exists():
-                    problems.append("%s:%d: dead link %s" % (relative, number, target))
+                    problems.append(f"{relative}:{number}: dead link {target}")
                 elif anchor and resolved.suffix == ".md" and anchor not in anchors(resolved):
-                    problems.append("%s:%d: missing anchor %s" % (relative, number, target))
+                    problems.append(f"{relative}:{number}: missing anchor {target}")
     return problems
 
 
@@ -124,65 +127,53 @@ def check():
     for req, body in reqs.items():
         text = "\n".join(body["lines"])
         if " shall " not in text:
-            problems.append("%s: no shall statement" % req)
-        for field in FIELDS:
-            if field not in text:
-                problems.append("%s: missing field %s" % (req, field))
+            problems.append(f"{req}: no shall statement")
+        problems.extend(f"{req}: missing field {field}" for field in FIELDS if field not in text)
         derivation = re.search(r"Derivation: (.+)", text)
-        for path in re.findall(r"`([^`]+)`", derivation.group(1) if derivation else ""):
-            if not (ROOT / path.split("::")[0]).exists():
-                problems.append("%s: derivation path missing: %s" % (req, path))
+        problems.extend(f"{req}: derivation path missing: {path}"
+                        for path in re.findall(r"`([^`]+)`", derivation.group(1) if derivation else "")
+                        if not (ROOT / path.split("::")[0]).exists())
     tests = collected_tests()
     vm_text = VM.read_text()
     rows = table_rows(vm_text, "| Requirement |")
     traced, referenced = {}, set()
     for row in rows:
         if len(row) < 5 or not REQ_ID.fullmatch(row[0]):
-            problems.append("VM: malformed row %s" % row)
+            problems.append(f"VM: malformed row {row}")
             continue
         req, method, target, last = row[0], row[1], row[2], row[4]
         traced.setdefault(req, []).append(method)
         if method not in METHODS:
-            problems.append("%s: unknown method %s" % (req, method))
-        refs = ["%s::%s.%s" % m for m in TEST_REF.findall(target)]
+            problems.append(f"{req}: unknown method {method}")
+        refs = refs_in(target)
         if method == "T" and not refs:
-            problems.append("%s: test method without a test reference" % req)
-        for ref in refs:
-            referenced.add(ref)
-            if ref not in tests:
-                problems.append("%s: referenced test does not exist: %s" % (req, ref))
+            problems.append(f"{req}: test method without a test reference")
+        referenced.update(refs)
+        problems.extend(f"{req}: referenced test does not exist: {ref}" for ref in refs if ref not in tests)
         if method in {"I", "A"}:
             paths = re.findall(r"`([^`]+)`", target)
             if not paths:
-                problems.append("%s: inspection/analysis row names no target" % req)
-            for path in paths:
-                if not (ROOT / path.split("::")[0]).exists():
-                    problems.append("%s: inspection target missing: %s" % (req, path))
+                problems.append(f"{req}: inspection/analysis row names no target")
+            problems.extend(f"{req}: inspection target missing: {path}" for path in paths
+                            if not (ROOT / path.split("::")[0]).exists())
         link = re.search(r"\(([^)]+)\)", last)
         if not link or not (VM.parent / link.group(1)).exists():
-            problems.append("%s: last result does not link an existing report" % req)
-    for req in reqs:
-        if req not in traced:
-            problems.append("%s: no verification matrix row" % req)
-    for req in traced:
-        if req not in reqs:
-            problems.append("%s: matrix row for unknown requirement" % req)
-    supporting = {"%s::%s.%s" % m for row in table_rows(vm_text, "| Test |") for m in TEST_REF.findall(row[0])}
-    for ref in sorted(supporting - tests):
-        problems.append("VM: supporting test does not exist: %s" % ref)
-    for ref in sorted(tests - referenced - supporting):
-        problems.append("VM: test traces to no requirement and is not classified: %s" % ref)
+            problems.append(f"{req}: last result does not link an existing report")
+    problems.extend(f"{req}: no verification matrix row" for req in reqs if req not in traced)
+    problems.extend(f"{req}: matrix row for unknown requirement" for req in traced if req not in reqs)
+    supporting = {ref for row in table_rows(vm_text, "| Test |") for ref in refs_in(row[0])}
+    problems.extend(f"VM: supporting test does not exist: {ref}" for ref in sorted(supporting - tests))
+    problems.extend(f"VM: test traces to no requirement and is not classified: {ref}"
+                    for ref in sorted(tests - referenced - supporting))
     sdd_rows = table_rows(SDD.read_text(), "| Component |")
     allocated = set()
     for row in sdd_rows:
         ids = set(REQ_ID.findall(row[-1]))
         allocated |= ids
         if not ids and "infrastructure" not in row[-1].lower():
-            problems.append("SDD: component %s implements no requirement and is not infrastructure" % row[0])
-        for req in ids - set(reqs):
-            problems.append("SDD: component %s cites unknown %s" % (row[0], req))
-    for req in sorted(set(reqs) - allocated):
-        problems.append("%s: not allocated to any SDD component" % req)
+            problems.append(f"SDD: component {row[0]} implements no requirement and is not infrastructure")
+        problems.extend(f"SDD: component {row[0]} cites unknown {req}" for req in ids - set(reqs))
+    problems.extend(f"{req}: not allocated to any SDD component" for req in sorted(set(reqs) - allocated))
     problems.extend(dead_links())
     summary = {"requirements": len(reqs), "traced": len(set(reqs) & set(traced)), "tests": len(tests),
                "tests_traced": len(tests & referenced), "tests_supporting": len(tests & supporting),
@@ -194,9 +185,10 @@ def main():
     problems, summary = check()
     for problem in problems:
         print(problem)
-    print("trace: %(requirements)d requirements, %(traced)d traced; %(tests)d tests, %(tests_traced)d traced to "
-          "requirements, %(tests_supporting)d supporting; %(markdown_files)d markdown files link-checked" % summary)
-    print("%d problem(s)" % len(problems))
+    print(f"trace: {summary['requirements']} requirements, {summary['traced']} traced; {summary['tests']} tests, "
+          f"{summary['tests_traced']} traced to requirements, {summary['tests_supporting']} supporting; "
+          f"{summary['markdown_files']} markdown files link-checked")
+    print(f"{len(problems)} problem(s)")
     return 1 if problems else 0
 
 
