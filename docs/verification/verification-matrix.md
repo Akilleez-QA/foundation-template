@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | FTEMPLATE-VM |
-| Version | 2.0 |
+| Version | 2.1 |
 | Status | Baselined |
 | Owner | Akilleez-QA |
-| Date | 2026-11-08 |
+| Date | 2026-11-09 |
 | Baseline commit | fb9993c55e9c708a3cfdd295b237466d4bef7ff1 |
 | Applies to | foundation-template main at baseline commit |
 | Classification | Self-assessed Class E analog; not safety-critical (see SMP §1) |
@@ -40,6 +40,15 @@ Method: T test, I inspection.
 | `tests/test_docs_trace.py::DocumentationTraceTests.test_requirements_trace_to_tests_design_and_live_links` | Infrastructure: documentation trace and link check |
 | `tests/test_docs_trace.py::DocumentationTraceTests.test_manifest_copy_passes_its_own_trace_check` | Infrastructure: a copy holding only `SOURCE-MANIFEST.json` and its listed files passes the trace and link check, as a vendoring consumer such as Cstack runs it; links into `.github/`, which the manifest excludes, are skipped only when `.github/` is absent |
 | `tests/test_docs_trace.py::DocumentationTraceTests.test_generated_reference_documents_are_current` | Infrastructure: generated tool catalog matches the schemas |
+| `tests/test_gen_reports.py::GenerateReportsTests.test_clean_runs_and_gates_pass` | Infrastructure: `tools/gen_reports.py` verdict: clean runs with every gate passed give a passing report and exit 0 |
+| `tests/test_gen_reports.py::GenerateReportsTests.test_main_exits_nonzero_when_gitleaks_finds_a_secret` | Infrastructure: `tools/gen_reports.py` verdict: a Gitleaks finding fails the report and the exit status |
+| `tests/test_gen_reports.py::GenerateReportsTests.test_failing_gate_fails_the_report` | Infrastructure: `tools/gen_reports.py` verdict: a stale generated catalog or a changed manifest fails the report |
+| `tests/test_gen_reports.py::GenerateReportsTests.test_gate_not_run_fails_the_report` | Infrastructure: `tools/gen_reports.py` verdict: a gate that did not run (Gitleaks not installed) fails the report |
+| `tests/test_gen_reports.py::GenerateReportsTests.test_skipped_test_fails_the_report` | Infrastructure: `tools/gen_reports.py` verdict: a skipped test fails the report |
+| `tests/test_gen_reports.py::GenerateReportsTests.test_expected_failure_fails_the_report` | Infrastructure: `tools/gen_reports.py` verdict: an expected failure fails the report |
+| `tests/test_gen_reports.py::GenerateReportsTests.test_unparsed_test_outcome_fails_the_report` | Infrastructure: `tools/gen_reports.py` verdict: a test outcome the parser cannot read fails the report |
+| `tests/test_gen_reports.py::GenerateReportsTests.test_trace_problem_fails_the_report` | Infrastructure: `tools/gen_reports.py` verdict: a trace problem fails the report |
+| `tests/test_gen_reports.py::GenerateReportsTests.test_empty_suite_fails_the_report` | Infrastructure: `tools/gen_reports.py` verdict: a run with no tests fails the report |
 
 ## Change history
 
@@ -48,3 +57,4 @@ Method: T test, I inspection.
 | 1.0 | 2026-10-30 | fbfaadb | Requirement to test-file table | Initial commit |
 | 1.1 | 2026-10-30 | 96671fa | REQ-TPL-007 points at `tests/test_input_limits.py` | PR #3 |
 | 2.0 | 2026-11-08 | fb9993c | Test-method references; rows for REQ-TPL-008 to REQ-TPL-012; results point to the generated test report | PR adding the NASA-standard documentation set |
+| 2.1 | 2026-11-09 | 3814683 | `tests/test_gen_reports.py` tests classified as infrastructure | PR fixing the 2026-11-09 backfill-review findings |
