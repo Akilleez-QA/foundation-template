@@ -64,7 +64,7 @@ def run_suite(optimized):
         if match:
             name, module, cls, outcome = match.groups()
             results[f"tests/{module}.py::{cls}.{name}"] = "skipped" if outcome.startswith("skipped") else outcome
-    ran = re.search(r"^Ran (\d+) tests? in ([0-9.]+)s$", proc.stderr, re.M)
+    ran = re.search(r"^Ran (\d+) tests? in ([0-9.]+)s$", proc.stderr, re.MULTILINE)
     display = f"python -B{' -O' if optimized else ''} -m unittest discover -s tests -t ."
     return {"command": display, "returncode": proc.returncode, "results": results,
             "ran": int(ran.group(1)) if ran else 0, "seconds": ran.group(2) if ran else "unknown",
@@ -156,12 +156,12 @@ def write_str(label, commit, dirty, today, runs, trace, gates):
     out = header(f"{CODE}-STR-{label.upper()}", f"software test report {label}", commit, label, today)
     out += ["## 1. Summary", "",
             f"- Conclusion: {conclusion}.",
-            f"- Remaining deficiencies and limitations: {len(gaps)} untested behaviours are listed as gaps in the "
-            f"[requirements](../../requirements/requirements.md#9-untested-behaviour-gaps) "
-            f"({', '.join(gaps) or 'none'}). No test exercises a "
-            "live host; the Cstack side of the interface is verified in the Cstack repository.",
-            "- Test-environment impact: tests read only files in the repository and start the bridge as a child "
-            "process. No network or external service is used.", "",
+            (f"- Remaining deficiencies and limitations: {len(gaps)} untested behaviours are listed as gaps in the "
+             f"[requirements](../../requirements/requirements.md#9-untested-behaviour-gaps) "
+             f"({', '.join(gaps) or 'none'}). No test exercises a "
+             "live host; the Cstack side of the interface is verified in the Cstack repository."),
+            ("- Test-environment impact: tests read only files in the repository and start the bridge as a child "
+             "process. No network or external service is used."), "",
             "## 2. Test log", "", "| Item | Value |", "|---|---|",
             f"| Commit | `{commit}`{dirty_note} |",
             f"| Date (UTC) | {now} |",
@@ -169,9 +169,9 @@ def write_str(label, commit, dirty, today, runs, trace, gates):
             "| Run by | operator, `tools/gen_reports.py` (local run, not CI) |"]
     out += [f"| `{run['command']}` | exit {run['returncode']}, {run['tail']}; {run['ran']} tests in {run['seconds']} s; "
             f"stderr SHA-256 `{run['digest']}` |" for run in runs]
-    out += [f"| `python -B tools/check_trace.py` | {len(problems)} problem(s); {summary['requirements']} requirements, "
-            f"{summary['traced']} traced; {summary['tests']} tests, {summary['tests_traced']} traced, "
-            f"{summary['tests_supporting']} supporting; {summary['markdown_files']} markdown files link-checked |"]
+    out += [(f"| `python -B tools/check_trace.py` | {len(problems)} problem(s); {summary['requirements']} requirements, "
+             f"{summary['traced']} traced; {summary['tests']} tests, {summary['tests_traced']} traced, "
+             f"{summary['tests_supporting']} supporting; {summary['markdown_files']} markdown files link-checked |")]
     out += [f"| {name} | {result} |" for name, result, _ in gates]
     out += ["", "## 3. Results", "", "| Test | Requirements | Normal | Optimized (-O) |", "|---|---|---|---|"]
     out += [f"| `{ref}` | {', '.join(mapping.get(ref, [])) or 'supporting'} | "
@@ -191,14 +191,14 @@ def write_str(label, commit, dirty, today, runs, trace, gates):
     else:
         out.append("None. No test failed or was skipped, the trace check reported no problems and every gate passed.")
     out += ["", "## 5. Metrics", "", "| Measure | Value | Command |", "|---|---|---|",
-            f"| Tests run / passed / failed (normal) | {normal['ran']} / "
-            f"{sum(v == 'ok' for v in normal['results'].values())} / "
-            f"{sum(v != 'ok' for v in normal['results'].values())} | `{normal['command']}` |",
-            f"| Tests run / passed / failed (optimized) | {optimized['ran']} / "
-            f"{sum(v == 'ok' for v in optimized['results'].values())} / "
-            f"{sum(v != 'ok' for v in optimized['results'].values())} | `{optimized['command']}` |",
-            f"| Requirements total / traced to a test or inspection | {summary['requirements']} / {summary['traced']} | "
-            "`python -B tools/check_trace.py` |",
+            (f"| Tests run / passed / failed (normal) | {normal['ran']} / "
+             f"{sum(v == 'ok' for v in normal['results'].values())} / "
+             f"{sum(v != 'ok' for v in normal['results'].values())} | `{normal['command']}` |"),
+            (f"| Tests run / passed / failed (optimized) | {optimized['ran']} / "
+             f"{sum(v == 'ok' for v in optimized['results'].values())} / "
+             f"{sum(v != 'ok' for v in optimized['results'].values())} | `{optimized['command']}` |"),
+            (f"| Requirements total / traced to a test or inspection | {summary['requirements']} / {summary['traced']} | "
+             "`python -B tools/check_trace.py` |"),
             f"| Untested behaviour gaps | {len(gaps)} | count of `{GAP}-` IDs in the SRS |",
             f"| TBD markers in the SRS | {tbd} | count of `TBD` in the SRS |",
             "| Requirement changes since previous tag | no previous tag | `git tag --list` |"]
@@ -214,9 +214,9 @@ def write_str(label, commit, dirty, today, runs, trace, gates):
     line_counts = ", ".join(f"{kind} {count}" for kind, count in sorted(lines.items()))
     out.append(f"| Source lines by type (tracked files) | {line_counts} | `git ls-files` + line count |")
     out += ["", "## 6. Rationale for decisions", "",
-            "The report is generated from a local run on the operator's machine with the same commands CI runs. "
-            "CI results for the same commit are on the pull request's checks page. Coverage is not measured because "
-            "the project is standard-library only and no coverage tool is pinned."]
+            ("The report is generated from a local run on the operator's machine with the same commands CI runs. "
+             "CI results for the same commit are on the pull request's checks page. Coverage is not measured because "
+             "the project is standard-library only and no coverage tool is pinned.")]
     out += footer(today, commit, "Generated test report")
     (REPORTS / f"STR-{label}.md").write_text("\n".join(out) + "\n")
     return passed
@@ -243,22 +243,22 @@ def write_vdd(label, commit, today):
             f"| Tag | {tag} |",
             f"| Commit | `{commit}` |", f"| Previous tag | {previous or 'none'} |", f"| Date | {today} |", "",
             "## 2. Contents", "",
-            "Source tree only. There is no built package and no installer. Files covered by `SOURCE-MANIFEST.json` "
-            "by top-level path:", "", "| Path | Files |", "|---|---|"]
+            ("Source tree only. There is no built package and no installer. Files covered by `SOURCE-MANIFEST.json` "
+             "by top-level path:"), "", "| Path | Files |", "|---|---|"]
     out += [f"| `{top}` | {count} |" for top, count in sorted(groups.items())]
     out += ["", "No third-party code is vendored. The runtime uses the Python standard library only.", "",
             "## 3. Build and install", "", "```sh",
             f"git clone https://github.com/Akilleez-QA/{REPO}", f"cd {REPO}",
             f"git checkout {commit}", "python -B -m unittest discover -s tests -t .",
             "python -B tools/build_manifest.py", "git diff --exit-code SOURCE-MANIFEST.json", "```", "",
-            "Requires Python 3.11 or newer (CI uses 3.12). Start the bridge with "
-            f"`python -B -m {BRIDGE}` from the repository root.", "",
+            ("Requires Python 3.11 or newer (CI uses 3.12). Start the bridge with "
+             f"`python -B -m {BRIDGE}` from the repository root."), "",
             "## 4. Integrity", "", "| Item | Value |", "|---|---|",
             f"| `SOURCE-MANIFEST.json` SHA-256 | `{hashlib.sha256(manifest_raw).hexdigest()}` |",
             f"| Manifest file count | {len(manifest['files'])} |",
             f"| Canonical tool inventory SHA-256 | `{hashlib.sha256(inventory).hexdigest()}` |", "",
-            "These are the three values a host pins (see the [interface control document](../icd/icd-cstack.md)). "
-            "Per-file digests are in `SOURCE-MANIFEST.json`.", "",
+            ("These are the three values a host pins (see the [interface control document](../icd/icd-cstack.md)). "
+             "Per-file digests are in `SOURCE-MANIFEST.json`."), "",
             "## 5. Changes since previous tag", "",
             since, "", "```",
             *log.splitlines(), "```", "", "See [CHANGELOG.md](../../CHANGELOG.md) for the summarized changes.", "",
@@ -271,11 +271,11 @@ def write_vdd(label, commit, today):
         out.append(f"Open issues at generation: {len(open_items)} (`gh issue list --state open`).")
     out += ["", "## 7. Documentation baseline", "", "| Document | Baseline commit |", "|---|---|"]
     for name in CONTROL_DOCS:
-        match = re.search(r"^\| Baseline commit \| (\S+) \|$", (ROOT / name).read_text(), re.M)
+        match = re.search(r"^\| Baseline commit \| (\S+) \|$", (ROOT / name).read_text(), re.MULTILINE)
         out.append(f"| [{name}](../../{name}) | {match.group(1) if match else 'not recorded'} |")
     out += ["", "## 8. Verification and scans", "",
-            f"Test and trace results for this commit: [STR-{label}](../verification/reports/STR-{label}.md). The "
-            "secret scan result is recorded in the same report's test log."]
+            (f"Test and trace results for this commit: [STR-{label}](../verification/reports/STR-{label}.md). The "
+             "secret scan result is recorded in the same report's test log.")]
     out += footer(today, commit, "Generated version description")
     (RELEASES / f"VDD-{label}.md").write_text("\n".join(out) + "\n")
 

@@ -10,7 +10,13 @@ from unittest import mock
 
 from foundation_template.tools import BOUNDARY, TOOL_NAMES, input_sha256
 from foundation_template_bridge.schemas import tool_definitions
-from foundation_template_bridge.server import LIMITS, PROTOCOL, Bridge, encode_response, serve
+from foundation_template_bridge.server import (
+    LIMITS,
+    PROTOCOL,
+    Bridge,
+    encode_response,
+    serve,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 INIT = {"jsonrpc": "2.0", "id": "init", "method": "initialize", "params": {"protocolVersion": PROTOCOL}}

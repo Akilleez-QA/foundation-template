@@ -135,7 +135,7 @@ class Bridge:
             return {"jsonrpc": "2.0", "id": identifier, "result": result}
         except WireError as error:
             return _error(identifier, error.code, str(error))
-        except Exception:
+        except Exception:  # noqa: BLE001
             return _error(identifier, -32603, "Internal bridge error; no evidence result is available")
 
     def handle(self, data):
