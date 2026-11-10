@@ -1,5 +1,7 @@
 import contextlib
 import io
+import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -9,7 +11,9 @@ from unittest import mock
 
 from tools import gen_reports
 
-REAL_RUN = subprocess.run
+COMMIT = "0" * 40
+GIT = {("rev-parse", "HEAD"): COMMIT, ("status", "--porcelain"): "", ("ls-files",): "README.md\ntools/gen_reports.py\n",
+       ("tag", "--list"): "", ("log", "--first-parent", "--format=%h %s", COMMIT): "0000000 Example commit\n"}
 REAL_TRACE = gen_reports.trace_module
 OK = "test_a (tests.test_bridge.BridgeTests.test_a) ... ok"
 SECOND = "test_b (tests.test_bridge.BridgeTests.test_b) ... "
@@ -26,7 +30,9 @@ def completed(command, returncode=0, stdout="", stderr=""):
 
 class Harness:
     def __init__(self, suite=None, gitleaks=(0, "no leaks found"), gitleaks_installed=True, gen_docs=0, diff=0,
-                 trace_problems=()):
+                 trace_problems=(), root=None):
+        self.root = root
+        self.git_calls = []
         self.suite = suite or (0, suite_stderr([OK, SECOND + "ok"], 2))
         self.trace_problems = list(trace_problems)
         self.gitleaks = gitleaks
@@ -45,7 +51,10 @@ class Harness:
             return completed(command, self.gen_docs)
         if command[:2] == ["git", "diff"]:
             return completed(command, self.diff)
-        return REAL_RUN(command, *args, **kwargs)
+        if command[0] == "git" and tuple(command[1:]) in GIT:
+            self.git_calls.append(tuple(command[1:]))
+            return completed(command, 0, GIT[tuple(command[1:])])
+        raise AssertionError("unexpected subprocess in report test: %r" % (command,))
 
     def which(self, name):
         if name == "gitleaks":
@@ -67,6 +76,9 @@ class Harness:
             stack.enter_context(mock.patch.object(gen_reports, "REPORTS", Path(tmp) / "reports"))
             stack.enter_context(mock.patch.object(gen_reports, "RELEASES", Path(tmp) / "releases"))
             stack.enter_context(mock.patch.object(sys, "argv", ["gen_reports.py"]))
+            if self.root is not None:
+                stack.enter_context(mock.patch.object(gen_reports, "ROOT", self.root))
+                stack.enter_context(mock.patch.dict(os.environ, {"GIT_CEILING_DIRECTORIES": str(self.root.parent)}))
             out = io.StringIO()
             stack.enter_context(contextlib.redirect_stdout(out))
             code = gen_reports.main()
@@ -118,6 +130,45 @@ class GenerateReportsTests(unittest.TestCase):
 
     def test_empty_suite_fails_the_report(self):
         self.assertFailed(Harness(suite=(0, suite_stderr([], 0, "NO TESTS RAN"))))
+
+
+class HermeticReportTests(unittest.TestCase):
+    def export(self, tmp):
+        root = Path(tmp) / "export"
+        shutil.copytree(gen_reports.ROOT, root, ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc"))
+        self.assertFalse((root / ".git").exists())
+        return root
+
+    def empty_repository(self, tmp):
+        root = self.export(tmp)
+        for name in ("objects", "refs/heads", "refs/tags"):
+            (root / ".git" / name).mkdir(parents=True)
+        (root / ".git" / "HEAD").write_text("ref: refs/heads/main\n")
+        return root
+
+    def assertVerdicts(self, root):
+        harness = Harness(root=root)
+        code, out, report = harness.main()
+        self.assertEqual(code, 0, out + report)
+        self.assertIn('"passed": true', out)
+        self.assertIn(COMMIT, out)
+        self.assertEqual({call[0] for call in harness.git_calls}, {"rev-parse", "status", "ls-files", "tag", "log"})
+        code, out, report = Harness(root=root, gitleaks=(1, "leaks found: 1")).main()
+        self.assertEqual(code, 1, out)
+        self.assertIn('"passed": false', out)
+        self.assertIn("leaks found: 1", report.split("## 4.")[1])
+        stderr = suite_stderr([OK, SECOND + "skipped 'required check disabled'"], 2, "OK (skipped=1)")
+        code, out, report = Harness(root=root, suite=(0, stderr)).main()
+        self.assertEqual(code, 1, out)
+        self.assertIn("skipped", report.split("## 4.")[1])
+
+    def test_verdict_without_git_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertVerdicts(self.export(tmp))
+
+    def test_verdict_in_empty_repository(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertVerdicts(self.empty_repository(tmp))
 
 
 if __name__ == "__main__":
