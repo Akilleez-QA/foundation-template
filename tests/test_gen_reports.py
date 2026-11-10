@@ -10,6 +10,7 @@ from unittest import mock
 from tools import gen_reports
 
 REAL_RUN = subprocess.run
+REAL_TRACE = gen_reports.trace_module
 OK = "test_a (tests.test_bridge.BridgeTests.test_a) ... ok"
 SECOND = "test_b (tests.test_bridge.BridgeTests.test_b) ... "
 
@@ -24,8 +25,10 @@ def completed(command, returncode=0, stdout="", stderr=""):
 
 
 class Harness:
-    def __init__(self, suite=None, gitleaks=(0, "no leaks found"), gitleaks_installed=True, gen_docs=0, diff=0):
+    def __init__(self, suite=None, gitleaks=(0, "no leaks found"), gitleaks_installed=True, gen_docs=0, diff=0,
+                 trace_problems=()):
         self.suite = suite or (0, suite_stderr([OK, SECOND + "ok"], 2))
+        self.trace_problems = list(trace_problems)
         self.gitleaks = gitleaks
         self.gitleaks_installed = gitleaks_installed
         self.gen_docs = gen_docs
@@ -49,8 +52,15 @@ class Harness:
             return "/usr/bin/gitleaks" if self.gitleaks_installed else None
         return None
 
+    def trace(self):
+        trace = REAL_TRACE()
+        summary = trace.check()[1]
+        trace.check = lambda: (list(self.trace_problems), summary)
+        return trace
+
     def main(self):
         with tempfile.TemporaryDirectory() as tmp, contextlib.ExitStack() as stack:
+            stack.enter_context(mock.patch.object(gen_reports, "trace_module", side_effect=self.trace))
             stack.enter_context(mock.patch.object(gen_reports.subprocess, "run", side_effect=self.run))
             stack.enter_context(mock.patch.object(gen_reports.shutil, "which", side_effect=self.which))
             stack.enter_context(mock.patch.object(gen_reports, "gh", return_value=None))
@@ -101,6 +111,10 @@ class GenerateReportsTests(unittest.TestCase):
     def test_unparsed_test_outcome_fails_the_report(self):
         stderr = suite_stderr([OK, SECOND + "\nsome output\nok"], 2)
         self.assertFailed(Harness(suite=(0, stderr)))
+
+    def test_trace_problem_fails_the_report(self):
+        report = self.assertFailed(Harness(trace_problems=["VM: example problem"]))
+        self.assertIn("VM: example problem", report.split("## 4.")[1])
 
     def test_empty_suite_fails_the_report(self):
         self.assertFailed(Harness(suite=(0, suite_stderr([], 0, "NO TESTS RAN"))))
