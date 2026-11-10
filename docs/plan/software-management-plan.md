@@ -41,7 +41,7 @@ Trunk-based development on `main`; every change is a pull request with one conce
 | Test runner | `unittest`, normal and `-O` modes | `.github/workflows/ci.yml` |
 | CI environment | `actions/checkout@v4`, `astral-sh/setup-uv@v7`, `ubuntu-latest` | `.github/workflows/ci.yml` |
 | Secret scan | gitleaks 8.28.0 | `.github/workflows/ci.yml` |
-| Static analysis | ruff 0.17.0, default rule set | `.github/workflows/ci.yml` |
+| Static analysis | ruff 0.17.0, default rule set; per-file ignore in `foundation_template_bridge/ruff.toml` | `.github/workflows/ci.yml` |
 | Type check | None configured | — (risk R-3) |
 
 ## 5. Verification and validation approach

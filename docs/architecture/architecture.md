@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | FTEMPLATE-SDD |
-| Version | 2.2 |
+| Version | 2.3 |
 | Status | Baselined |
 | Owner | Akilleez-QA |
 | Date | 2026-11-10 |
@@ -66,7 +66,7 @@ sequenceDiagram
 | Domain tools | `foundation_template/tools.py` | Argument checks, the tool itself, receipts (`input_sha256`, `boundary`, Evidence) | tool name and arguments → (isError, assessment, receipt) | REQ-TPL-001, REQ-TPL-003, REQ-TPL-004, REQ-TPL-005, REQ-TPL-009, REQ-TPL-012 |
 | Manifest tool | `tools/build_manifest.py` | Writes `SOURCE-MANIFEST.json` with `version` taken from `foundation_template.__version__`; prints file count, manifest SHA-256 and inventory SHA-256; `--inventory` prints the canonical inventory | source tree → manifest | REQ-TPL-002, REQ-TPL-019 |
 | Package version | `foundation_template/__init__.py` | Holds `__version__`, the single source of the version | none → version string | REQ-TPL-019 |
-| Documentation tools | `tools/check_trace.py`, `tools/gen_docs.py`, `tools/gen_reports.py` | Trace and link check; generated tool catalog; generated test report and version description, whose verdict fails on any failed or unrun gate, skip or unparsed outcome | docs, tests, schemas → checks and generated Markdown | REQ-TPL-013 |
+| Documentation tools | `tools/check_trace.py`, `tools/gen_docs.py`, `tools/gen_reports.py` | Trace and link check; generated tool catalog; generated test report and version description, whose verdict fails on any failed or unrun gate, skip or unparsed outcome, and whose gap count includes only open gap-table rows | docs, tests, schemas → checks and generated Markdown | REQ-TPL-013, REQ-TPL-020 |
 
 ## 5. Execution concept
 
@@ -100,7 +100,7 @@ Nothing is retried. Nothing is written, so nothing is quarantined.
 
 ### 7.1 Broad exception handler
 
-`Bridge.dispatch` ends with `except Exception`, which turns any unexpected exception into `-32603` (REQ-TPL-016). The breadth is deliberate: the bridge is the containment boundary between the host and tool code, a copy replaces the tool with domain code whose failure modes the bridge cannot list, and a narrower handler would let a tool defect end the session with a traceback and no response. `WireError` is caught first, so protocol refusals keep their own codes. The handler returns a fixed message and never the exception text. The line carries `# noqa: BLE001` so that a ruff run selecting the flake8-blind-except rules accepts it; the CI ruff job uses ruff's default rule set, which does not include that rule. This section is the rationale for that marker, since the code carries no comments.
+`Bridge.dispatch` ends with `except Exception`, which turns any unexpected exception into `-32603` (REQ-TPL-016). The breadth is deliberate: the bridge is the containment boundary between the host and tool code, a copy replaces the tool with domain code whose failure modes the bridge cannot list, and a narrower handler would let a tool defect end the session with a traceback and no response. `WireError` is caught first, so protocol refusals keep their own codes. The handler returns a fixed message and never the exception text. ruff 0.17.0's default rule set includes BLE001 (blind except), which flags this handler. The exception is granted in configuration, not in code: `foundation_template_bridge/ruff.toml` holds `[lint.per-file-ignores] "server.py" = ["BLE001"]`, so BLE001 still applies to every other file and every other rule still applies to `server.py`. The code carries no comment or `noqa` marker; `tests/test_source_rules.py` fails on any comment or docstring in Python source. Because that `ruff.toml` is the nearest configuration for files under `foundation_template_bridge/`, a ruff setting meant for the whole repository must also be added there, or that file must `extend` a root configuration.
 
 ## 8. Resource use
 
@@ -130,3 +130,4 @@ Input is bounded per frame (64 KiB, 4096 nodes); output per frame (1 MiB). No di
 | 2.0 | 2026-11-08 | fb9993c | NASA-standard structure; components with requirement IDs; execution, failure and quality sections | PR adding the NASA-standard documentation set |
 | 2.1 | 2026-11-09 | 3814683 | Documentation tools allocated REQ-TPL-013 | PR fixing the 2026-11-09 backfill-review findings |
 | 2.2 | 2026-11-10 | 28ecad1 | REQ-TPL-014 to REQ-TPL-019 allocated; failure table covers the formerly untested paths; §7.1 rationale for the broad exception handler; manifest version from the package | PR closing the family findings sweep for this repository |
+| 2.3 | 2026-11-10 | 4f55f21 | §7.1: BLE001 allowed by a per-file ignore in `foundation_template_bridge/ruff.toml` instead of a `noqa` comment; documentation tools allocated REQ-TPL-020 | Codex review of PR #16 |

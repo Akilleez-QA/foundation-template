@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | FTEMPLATE-VM |
-| Version | 2.2 |
+| Version | 2.3 |
 | Status | Baselined |
 | Owner | Akilleez-QA |
 | Date | 2026-11-10 |
@@ -39,6 +39,7 @@ Method: T test, I inspection.
 | REQ-TPL-017 | T | `tests/test_bridge.py::GapTests.test_gap_tpl_004_envelope_is_refused_and_notifications_get_no_reply` | 15 malformed envelopes (batch, non-object, extra field, wrong `jsonrpc`, bad `method`, null, boolean, array, object and 129-character `id`) each give `-32600` with a null `id`; a 128-character `id` is accepted; `ping` and `initialize` without `id` get no reply and `initialize` takes no effect (closes GAP-TPL-004) | [STR-unreleased](reports/STR-unreleased.md) |
 | REQ-TPL-018 | T | `tests/test_bridge.py::GapTests.test_gap_tpl_005_unterminated_frame_and_broken_pipe_exit_2` | An unterminated last frame gives `-32002` with a null `id` and exit 2, in process and as a child process; a failing sink gives exit 2; a child process whose stdout pipe is closed exits 2 with empty stderr (closes GAP-TPL-005) | [STR-unreleased](reports/STR-unreleased.md) |
 | REQ-TPL-019 | T | `tests/test_build_manifest.py::ManifestToolTests.test_gap_tpl_006_inventory_and_manifest_summary`<br>`tests/test_build_manifest.py::ManifestToolTests.test_f7_manifest_version_follows_package_version` | In a copy of the manifest's files, `--inventory` prints the canonical inventory and leaves the manifest unchanged; the normal run prints exactly `files`, `sha256` and `inventory_sha256` matching the written manifest and reproduces the committed one; the manifest `version` equals `__version__` and follows a changed `__version__` (closes GAP-TPL-006 and F-7) | [STR-unreleased](reports/STR-unreleased.md) |
+| REQ-TPL-020 | T | `tests/test_gen_reports.py::GenerateReportsTests.test_only_open_gap_rows_count_as_untested`<br>`tests/test_gen_reports.py::GenerateReportsTests.test_report_lists_no_closed_gap_as_untested` | An SRS fixture with one closed and one open gap row, plus gap IDs in prose and rationale, yields only the open row; the report generated from this repository's SRS states 0 untested behaviours and names no gap ID in its summary | [STR-unreleased](reports/STR-unreleased.md) |
 
 ## Tests without a requirement
 
@@ -47,6 +48,9 @@ Method: T test, I inspection.
 | `tests/test_docs_trace.py::DocumentationTraceTests.test_requirements_trace_to_tests_design_and_live_links` | Infrastructure: documentation trace and link check |
 | `tests/test_docs_trace.py::DocumentationTraceTests.test_manifest_copy_passes_its_own_trace_check` | Infrastructure: a copy holding only `SOURCE-MANIFEST.json` and its listed files passes the trace and link check, as a vendoring consumer such as Cstack runs it; links into `.github/`, which the manifest excludes, are skipped only when `.github/` is absent |
 | `tests/test_docs_trace.py::DocumentationTraceTests.test_generated_reference_documents_are_current` | Infrastructure: generated tool catalog matches the schemas |
+| `tests/test_source_rules.py::SourceRuleTests.test_python_sources_have_no_comments` | Supporting: enforces the no-code-comments design constraint (SRS §10) over every Python file in the package, bridge, tools and tests; added after the Codex review of PR #16 (P1) |
+| `tests/test_source_rules.py::SourceRuleTests.test_python_sources_have_no_docstrings` | Supporting: enforces the same constraint for module, class and function docstrings (the F-3 defect class) |
+| `tests/test_source_rules.py::SourceRuleTests.test_rule_detects_a_comment_and_a_docstring` | Supporting: shows the two rule checks detect a `noqa` comment and a docstring and ignore a `#` inside a string |
 
 ## Change history
 
@@ -57,3 +61,4 @@ Method: T test, I inspection.
 | 2.0 | 2026-11-08 | fb9993c | Test-method references; rows for REQ-TPL-008 to REQ-TPL-012; results point to the generated test report | PR adding the NASA-standard documentation set |
 | 2.1 | 2026-11-09 | 3814683 | Row for REQ-TPL-013 (test report verdict) | PR fixing the 2026-11-09 backfill-review findings |
 | 2.2 | 2026-11-10 | 28ecad1 | Rows for REQ-TPL-014 to REQ-TPL-019, tracing the seven tests that close GAP-TPL-001 to GAP-TPL-006 and F-7 | PR closing the family findings sweep for this repository |
+| 2.3 | 2026-11-10 | 4f55f21 | Row for REQ-TPL-020; source-rule tests classified as supporting | Codex review of PR #16 |

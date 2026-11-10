@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | FTEMPLATE-SCMP |
-| Version | 2.1 |
+| Version | 2.2 |
 | Status | Baselined |
 | Owner | Akilleez-QA |
 | Date | 2026-11-10 |
@@ -42,7 +42,7 @@ The full per-file table is `SOURCE-MANIFEST.json`, regenerated and never edited.
 - `main` has no branch protection or ruleset at this baseline (`gh api repos/Akilleez-QA/foundation-template/branches/main/protection` returns 404 "Branch not protected"); CI runs on every pull request and push but is not required for merge (SMP risk R-2).
 - After any change to a covered file, run `python -B tools/build_manifest.py` and commit the new manifest. Consumers repin from its output.
 - Secret scanning: CI runs gitleaks over the full history. Scanning locally before pushing is a contributor convention, not an enforced gate.
-- Static analysis: the CI `ruff` job runs `uvx ruff@0.17.0 check .` with ruff's default rule set (no configuration file). Like the other jobs it is not required for merge while `main` is unprotected.
+- Static analysis: the CI `ruff` job runs `uvx ruff@0.17.0 check .` with ruff's default rule set. The only ruff configuration is `foundation_template_bridge/ruff.toml`, a per-file ignore of BLE001 for `server.py` (SDD §7.1); it is a shipped file covered by the manifest. Like the other jobs it is not required for merge while `main` is unprotected.
 
 ## 4. Status accounting
 
@@ -78,3 +78,4 @@ Reviewed in any pull request that changes CI, the manifest generator, the docume
 | 1.1 | 2026-11-03 | ab81203 | Manifest excludes the root `.github/` tree | PR #10 |
 | 2.0 | 2026-11-08 | fb9993c | NASA-standard structure; generated outputs; branch-protection status; secret-scanning claim corrected to what CI enforces | PR adding the NASA-standard documentation set |
 | 2.1 | 2026-11-10 | 28ecad1 | Version has one source; ruff CI job described | PR closing the family findings sweep for this repository |
+| 2.2 | 2026-11-10 | 4f55f21 | ruff configuration file recorded | Codex review of PR #16 |

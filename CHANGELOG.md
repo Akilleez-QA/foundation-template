@@ -9,7 +9,9 @@ Format: Keep a Changelog 1.1, SemVer.
 - Tests for every formerly untested bridge and manifest-tool behaviour (GAP-TPL-001 to GAP-TPL-006), baselined as REQ-TPL-014 to REQ-TPL-019 in `tests/test_bridge.py::GapTests` and `tests/test_build_manifest.py`. Port these tests to existing Foundations.
 - `tools/build_manifest.py` takes the manifest `version` from `foundation_template.__version__`; a test checks they agree (F-7).
 - `encode_response` withholds a result that cannot be serialized (`TypeError`, for example a set) with `-32603` "Result withheld" instead of raising; the bridge process exits 2 with empty stderr when its stdout pipe is closed.
-- CI runs `uvx ruff@0.17.0 check .` (default rules); code tidied to pass it. Rationale for the one `noqa` marker is in SDD §7.1.
+- CI runs `uvx ruff@0.17.0 check .` (default rules); code tidied to pass it. The bridge's broad exception handler is allowed by a per-file BLE001 ignore in `foundation_template_bridge/ruff.toml`, not a `noqa` comment; rationale in SDD §7.1.
+- `tests/test_source_rules.py` enforces the no-comments and no-docstrings rule over all Python source.
+- `tools/gen_reports.py` counts only open gap-table rows as untested behaviour (REQ-TPL-020); before, closed gaps were counted. Found by the Codex review of PR #16.
 - Removed the class docstring in `tests/test_input_limits.py` (F-3).
 - The manifest digest and file count change: consumers such as Cstack must repin (F-5).
 

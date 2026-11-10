@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | FTEMPLATE-STP |
-| Version | 1.2 |
+| Version | 1.3 |
 | Status | Baselined |
 | Owner | Akilleez-QA |
 | Date | 2026-11-10 |
@@ -26,7 +26,8 @@ All verification is automated with Python's `unittest`, plus three CI gates (sec
 | System | The bridge as a real child process and in process (`Bridge`, `encode_response`, `serve`): handshake, catalog, tool call, refusals, envelope checks, internal errors, output limit, exit status | `tests/test_bridge.py` | same |
 | Configuration | Source manifest equals the tree; the manifest tool's output and version, run in a temporary copy | `tests/test_bridge.py::BridgeTests.test_source_manifest_lists_every_file`, `tests/test_build_manifest.py` | same |
 | Documentation | Requirement trace, dead links, generated catalog current | `tests/test_docs_trace.py` | same |
-| Report generator | The test report fails on failed gates, skips and unparsed outcomes | `tests/test_gen_reports.py` | same |
+| Report generator | The test report fails on failed gates, skips and unparsed outcomes, and counts only open gap rows | `tests/test_gen_reports.py` | same |
+| Source rules | No comments or docstrings in Python source (SRS §10) | `tests/test_source_rules.py` | same |
 | Optimized mode | Every test with `-O` | all | `python -B -O -m unittest discover -s tests -t .` |
 | Regression | Full suite on every push to `main` and every pull request | `.github/workflows/ci.yml` | both commands |
 
@@ -39,7 +40,7 @@ All verification is automated with Python's `unittest`, plus three CI gates (sec
 | Dependencies | None (standard library only) | imports |
 | External services | None | `tests/` |
 | Secret scan | gitleaks 8.28.0, default rules | `.github/workflows/ci.yml`, `.gitleaks.toml` |
-| Static analysis | ruff 0.17.0, default rule set, no configuration file | `.github/workflows/ci.yml` |
+| Static analysis | ruff 0.17.0, default rule set; one per-file ignore (BLE001 for `server.py`) | `.github/workflows/ci.yml`, `foundation_template_bridge/ruff.toml` |
 
 CI commands, copied from `.github/workflows/ci.yml`:
 
@@ -90,6 +91,13 @@ Automated suites: run the two unittest commands in §3 from the repository root.
 - Expected result: tests pass; the trace check reports zero problems after the renames.
 - Last run: 2026-11-08, partial, on the working tree before this baseline was committed: steps 1 and 4 (renames to `foundation-acoustics`, `gen_docs.py`, `build_manifest.py`, tests, trace check). The renamed bridge answered `initialize` as `foundation-acoustics-jsonrpc/1`; all tests passed except the trace test, which failed only because the generated test report and version description did not exist yet in that tree. Steps 2 and 3 (replacing the tool and rewriting documents) were not exercised.
 
+### Review findings fixed
+
+| ID | Source | Finding | Fix | Test |
+|---|---|---|---|---|
+| P1 | Codex review of PR #16 | A `# noqa: BLE001` code comment broke the no-comments rule, and no test enforced the rule | Comment removed; BLE001 allowed for `server.py` in `foundation_template_bridge/ruff.toml` (SDD §7.1) | `tests/test_source_rules.py` |
+| P2 | Codex review of PR #16 | The test report counted every `GAP-TPL-` ID in the SRS, so closed gaps were reported as untested | `tools/gen_reports.py` counts only gap-table rows not marked Closed (REQ-TPL-020) | `tests/test_gen_reports.py::GenerateReportsTests.test_only_open_gap_rows_count_as_untested`, `tests/test_gen_reports.py::GenerateReportsTests.test_report_lists_no_closed_gap_as_untested` |
+
 ## 8. Test risks and limitations
 
 - No test drives a host adapter; that side is tested in Cstack against its vendored copy.
@@ -106,3 +114,4 @@ See the [verification matrix](verification-matrix.md).
 | 1.0 | 2026-11-08 | fb9993c | Initial baseline | PR adding the NASA-standard documentation set |
 | 1.1 | 2026-11-09 | 3814683 | Report-generator test level; TP-1 criteria name the gates, skips and unparsed outcomes that fail the report; Gitleaks required | PR fixing the 2026-11-09 backfill-review findings |
 | 1.2 | 2026-11-10 | 28ecad1 | Ruff CI gate and its pass criterion; manifest-tool tests in the configuration level; GAP-TPL-001 to GAP-TPL-006 closed | PR closing the family findings sweep for this repository |
+| 1.3 | 2026-11-10 | 4f55f21 | Source-rules test level; report-generator gap count; ruff configuration; P1 and P2 from the Codex review of PR #16 recorded as fixed | Codex review of PR #16 |

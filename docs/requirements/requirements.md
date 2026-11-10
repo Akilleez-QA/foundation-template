@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | FTEMPLATE-SRS |
-| Version | 2.2 |
+| Version | 2.3 |
 | Status | Baselined |
 | Owner | Akilleez-QA |
 | Date | 2026-11-10 |
@@ -17,7 +17,7 @@
 
 ### 1.1 Purpose and audience
 
-This document states what foundation-template does, as inspected in the code and checked by its tests. It serves two readers: someone changing the template itself, and someone copying it to start a new Foundation. A copy keeps the record format and the general requirements (REQ-TPL-002 to REQ-TPL-011 and REQ-TPL-013 to REQ-TPL-019), renames the prefix, and replaces REQ-TPL-001 and REQ-TPL-012 with its own domain tools. See [Start a new Foundation](../guides/how-to/start-a-new-foundation.md).
+This document states what foundation-template does, as inspected in the code and checked by its tests. It serves two readers: someone changing the template itself, and someone copying it to start a new Foundation. A copy keeps the record format and the general requirements (REQ-TPL-002 to REQ-TPL-011 and REQ-TPL-013 to REQ-TPL-020), renames the prefix, and replaces REQ-TPL-001 and REQ-TPL-012 with its own domain tools. See [Start a new Foundation](../guides/how-to/start-a-new-foundation.md).
 
 Every requirement below is behaviour the code has and a test or inspection checks. Behaviour the code has but no test checks is listed in §9 as a gap until a test closes it.
 
@@ -229,6 +229,16 @@ When the last line on stdin has no newline, the bridge shall answer it with `-32
 - Verification: T
 - Status: Baselined
 
+### REQ-TPL-020 — Test report gap count
+
+`tools/gen_reports.py` shall count and list as untested behaviour only the rows of the SRS gap table whose status does not begin with "Closed", ignoring gap IDs mentioned anywhere else in the SRS.
+
+- Rationale: Closed gaps stay in the register because IDs are never reused, and requirements cite the gap they came from; the report must not present them as open. Found by the Codex review of PR #16 (P2).
+- Derivation: `tools/gen_reports.py`
+- Allocated to: SDD §4 (documentation tools)
+- Verification: T
+- Status: Baselined
+
 ## 9. Untested behaviour (gaps)
 
 No untested behaviour is open. The gaps found at the documentation baseline by reading the code and searching `tests/` for each code path are closed: each now has a test and a requirement. Gap IDs are never reused.
@@ -271,3 +281,4 @@ Test (T): automated `unittest` tests, run by `python -B -m unittest discover -s 
 | 2.0 | 2026-11-08 | fb9993c | NASA-standard record format; REQ-TPL-008 to REQ-TPL-012 added for tested behaviour; untested behaviour listed as gaps | PR adding the NASA-standard documentation set |
 | 2.1 | 2026-11-09 | 3814683 | REQ-TPL-013 (test report verdict) | PR fixing the 2026-11-09 backfill-review findings |
 | 2.2 | 2026-11-10 | 28ecad1 | REQ-TPL-014 to REQ-TPL-019 for behaviour now tested; GAP-TPL-001 to GAP-TPL-006 closed; REQ-TPL-019 covers the manifest version (F-7) | PR closing the family findings sweep for this repository |
+| 2.3 | 2026-11-10 | 4f55f21 | REQ-TPL-020 (the test report counts only open gap rows) | Codex review of PR #16 |
