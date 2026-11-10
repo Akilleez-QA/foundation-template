@@ -39,7 +39,7 @@ grep -rnI --exclude-dir=.git -e FTEMPLATE -e REQ-TPL -e GAP-TPL -e echo_observat
 | `README.md` | Purpose, Status (version and classification summary), What is inside, Limitations |
 | `docs/plan/software-management-plan.md` | Re-assess the classification in §1 for your domain. Engineering or safety-relevant data keeps the Class D-analog sentence. Update §8 components and §12 risks |
 | `docs/plan/compliance-matrix.md` | Change only cells that differ for your repo (for example SWE-027 if you use offline generators, SWE-211 if you reuse code) |
-| `docs/requirements/requirements.md` | Change the prefix to `REQ-ACU`. Keep the general requirements (manifest, boundary, Evidence, input hash, bounded execution, input limits, handshake, inventory, numeric profile, exit status). Replace REQ-TPL-001 and REQ-TPL-012 with one requirement per domain behaviour that a test checks. List untested behaviour as gaps |
+| `docs/requirements/requirements.md` | Change the prefix to `REQ-ACU`. Keep the general requirements (manifest, boundary, Evidence, input hash, bounded execution, input limits, handshake, inventory, numeric profile, exit status, handshake order, output limit, internal errors, request envelope, session end, manifest tool). Replace REQ-TPL-001 and REQ-TPL-012 with one requirement per domain behaviour that a test checks. List untested behaviour as gaps |
 | `docs/architecture/architecture.md` | Components table (each row lists its requirement IDs), decisions, quality attributes |
 | `docs/icd/icd-cstack.md` | Protocol name, numeric profile, error table |
 | `docs/data/data-dictionary.md` | Tool parameters with units and ranges; a provenance row (source, edition, units, transformation, validating test) for every embedded table |

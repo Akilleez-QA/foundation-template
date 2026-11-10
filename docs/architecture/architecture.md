@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | FTEMPLATE-SDD |
-| Version | 2.1 |
+| Version | 2.3 |
 | Status | Baselined |
 | Owner | Akilleez-QA |
-| Date | 2026-11-09 |
+| Date | 2026-11-10 |
 | Baseline commit | fb9993c55e9c708a3cfdd295b237466d4bef7ff1 |
 | Applies to | foundation-template main at baseline commit |
 | Classification | Self-assessed Class E analog; not safety-critical (see SMP §1) |
@@ -60,13 +60,13 @@ sequenceDiagram
 
 | Component | Path | Responsibility | Inputs → outputs | Requirements |
 |---|---|---|---|---|
-| Bridge entry point | `foundation_template_bridge/__main__.py` | Disables bytecode writing and starts `server.main` | argv → exit status | REQ-TPL-006, REQ-TPL-011 |
-| Bridge server | `foundation_template_bridge/server.py` | Frame decoding and limits, JSON-RPC envelope, handshake, dispatch, response encoding, exit status | stdin lines → stdout lines | REQ-TPL-006, REQ-TPL-007, REQ-TPL-008, REQ-TPL-010, REQ-TPL-011 |
+| Bridge entry point | `foundation_template_bridge/__main__.py` | Disables bytecode writing, then imports `server` and starts `server.main` | argv → exit status | REQ-TPL-006, REQ-TPL-011, REQ-TPL-018 |
+| Bridge server | `foundation_template_bridge/server.py` | Frame decoding and limits, JSON-RPC envelope, handshake, dispatch, internal-error containment, response encoding and output limit, exit status | stdin lines → stdout lines | REQ-TPL-006, REQ-TPL-007, REQ-TPL-008, REQ-TPL-010, REQ-TPL-011, REQ-TPL-014, REQ-TPL-015, REQ-TPL-016, REQ-TPL-017, REQ-TPL-018 |
 | Schemas | `foundation_template_bridge/schemas.py` | Tool inventory with closed input and output JSON Schemas | none → tool definitions | REQ-TPL-003, REQ-TPL-009 |
 | Domain tools | `foundation_template/tools.py` | Argument checks, the tool itself, receipts (`input_sha256`, `boundary`, Evidence) | tool name and arguments → (isError, assessment, receipt) | REQ-TPL-001, REQ-TPL-003, REQ-TPL-004, REQ-TPL-005, REQ-TPL-009, REQ-TPL-012 |
-| Manifest tool | `tools/build_manifest.py` | Writes `SOURCE-MANIFEST.json`; prints file count, manifest SHA-256 and inventory SHA-256; `--inventory` prints the canonical inventory | source tree → manifest | REQ-TPL-002 |
-| Package version | `foundation_template/__init__.py` | Holds `__version__` | none → version string | Infrastructure |
-| Documentation tools | `tools/check_trace.py`, `tools/gen_docs.py`, `tools/gen_reports.py` | Trace and link check; generated tool catalog; generated test report and version description, whose verdict fails on any failed or unrun gate, skip or unparsed outcome | docs, tests, schemas → checks and generated Markdown | REQ-TPL-013 |
+| Manifest tool | `tools/build_manifest.py` | Writes `SOURCE-MANIFEST.json` with `version` taken from `foundation_template.__version__`; prints file count, manifest SHA-256 and inventory SHA-256; `--inventory` prints the canonical inventory | source tree → manifest | REQ-TPL-002, REQ-TPL-019 |
+| Package version | `foundation_template/__init__.py` | Holds `__version__`, the single source of the version | none → version string | REQ-TPL-019 |
+| Documentation tools | `tools/check_trace.py`, `tools/gen_docs.py`, `tools/gen_reports.py` | Trace and link check; generated tool catalog; generated test report and version description, whose verdict fails on any failed or unrun gate, skip or unparsed outcome, and whose gap count includes only open gap-table rows | docs, tests, schemas → checks and generated Markdown | REQ-TPL-013, REQ-TPL-020 |
 
 ## 5. Execution concept
 
@@ -88,10 +88,19 @@ sequenceDiagram
 | Malformed, oversized or non-integer frame | JSON-RPC error `-32700` or `-32002`; no tool runs | REQ-TPL-007, REQ-TPL-010 |
 | Line over the frame limit | Error response, then exit 2 | REQ-TPL-011 |
 | Call before `initialize`; unknown tool | `-32000`; `-32602` | REQ-TPL-008 |
+| Wrong protocol; second `initialize`; `tools/list` before `initialize` | `-32001`; `-32000`; `-32000` | REQ-TPL-014 |
+| Batch, extra field, wrong `jsonrpc`, bad `method` or `id` | `-32600` with a null `id`; a request without `id` is dropped silently | REQ-TPL-017 |
+| Unterminated last frame | `-32002`, then exit 2 | REQ-TPL-018 |
+| Broken or closed stdout | Exit 2; stdout is pointed at the null device so the interpreter's final flush cannot write a traceback to stderr | REQ-TPL-018 |
 | Bad tool arguments | Tool error result with Evidence | REQ-TPL-004, REQ-TPL-012 |
-| Unexpected exception; oversized response | `-32603`; "Result withheld" (untested: GAP-TPL-002, GAP-TPL-003) | — |
+| Unexpected exception while handling a request | `-32603` "Internal bridge error; no evidence result is available", with no exception detail | REQ-TPL-016 |
+| Response over 1 MiB; response that cannot be encoded as strict JSON | `-32002` or `-32603` "Result withheld", keeping the request `id` | REQ-TPL-015 |
 
 Nothing is retried. Nothing is written, so nothing is quarantined.
+
+### 7.1 Broad exception handler
+
+`Bridge.dispatch` ends with `except Exception`, which turns any unexpected exception into `-32603` (REQ-TPL-016). The breadth is deliberate: the bridge is the containment boundary between the host and tool code, a copy replaces the tool with domain code whose failure modes the bridge cannot list, and a narrower handler would let a tool defect end the session with a traceback and no response. `WireError` is caught first, so protocol refusals keep their own codes. The handler returns a fixed message and never the exception text. ruff 0.17.0's default rule set includes BLE001 (blind except), which flags this handler. The exception is granted in configuration, not in code: `foundation_template_bridge/ruff.toml` holds `[lint.per-file-ignores] "server.py" = ["BLE001"]`, so BLE001 still applies to every other file and every other rule still applies to `server.py`. The code carries no comment or `noqa` marker; `tests/test_source_rules.py` fails on any comment or docstring in Python source. Because that `ruff.toml` is the nearest configuration for files under `foundation_template_bridge/`, a ruff setting meant for the whole repository must also be added there, or that file must `extend` a root configuration.
 
 ## 8. Resource use
 
@@ -103,8 +112,8 @@ Input is bounded per frame (64 KiB, 4096 nodes); output per frame (1 MiB). No di
 |---|---|
 | Traceability | Evidence on every result; `input_sha256`; manifest and inventory digests |
 | Security | Bounded parser; integer-only numbers; no paths, options, network or file access; closed schemas |
-| Maintainability | Four small source files; rationale in `docs/`; generated reference page |
-| Testability | The bridge can be driven in-process (`decode_frame`, `serve`) or as a real child process |
+| Maintainability | Four small source files; rationale in `docs/`; generated reference page; ruff 0.17.0 in CI |
+| Testability | The bridge can be driven in-process (`decode_frame`, `Bridge`, `encode_response`, `serve`) or as a real child process |
 | Portability | Standard library only; tested in CI on Python 3.12 on Ubuntu |
 | Reusability | Copy-ready layout and documentation set; see [Start a new Foundation](../guides/how-to/start-a-new-foundation.md) |
 
@@ -120,3 +129,5 @@ Input is bounded per frame (64 KiB, 4096 nodes); output per frame (1 MiB). No di
 | 1.0 | 2026-10-30 | fbfaadb | Context, components, tools, data flow, decisions | Initial commit |
 | 2.0 | 2026-11-08 | fb9993c | NASA-standard structure; components with requirement IDs; execution, failure and quality sections | PR adding the NASA-standard documentation set |
 | 2.1 | 2026-11-09 | 3814683 | Documentation tools allocated REQ-TPL-013 | PR fixing the 2026-11-09 backfill-review findings |
+| 2.2 | 2026-11-10 | 28ecad1 | REQ-TPL-014 to REQ-TPL-019 allocated; failure table covers the formerly untested paths; §7.1 rationale for the broad exception handler; manifest version from the package | PR closing the family findings sweep for this repository |
+| 2.3 | 2026-11-10 | 4f55f21 | §7.1: BLE001 allowed by a per-file ignore in `foundation_template_bridge/ruff.toml` instead of a `noqa` comment; documentation tools allocated REQ-TPL-020 | Codex review of PR #16 |

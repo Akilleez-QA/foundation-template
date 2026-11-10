@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | FTEMPLATE-SAR |
-| Version | 1.0 |
+| Version | 1.2 |
 | Status | Baselined |
 | Owner | Akilleez-QA |
-| Date | 2026-11-08 |
+| Date | 2026-11-10 |
 | Baseline commit | fb9993c55e9c708a3cfdd295b237466d4bef7ff1 |
 | Applies to | foundation-template main at baseline commit |
 | Classification | Self-assessed Class E analog; not safety-critical (see SMP §1) |
@@ -14,6 +14,40 @@
 > Organized after [NPR 7150.2D](https://nodis3.gsfc.nasa.gov/displayAll.cfm?Internal_ID=N_PR_7150_002D_&page_name=all), [NASA-STD-8739.8B](https://standards.nasa.gov/standard/nasa/nasa-std-87398) and the [NASA Software Engineering Handbook](https://swehb.nasa.gov/display/SWEHBVD/7.18+-+Documentation+Guidance) documentation guidance. This is not a NASA compliance determination or certification. The software classification is a self-assessed analog (Class E, not safety-critical); no NASA authority, independent verification and validation, or hazard analysis is asserted. The document describes the implementation inspected at the baseline commit.
 
 Rolling record, newest entry first. A copy replaces this entry with its own first baseline entry and keeps the format.
+
+## Entry 2026-11-10 — Codex review of PR #16 (atom commit 4f55f21)
+
+- Analyzed by: Codex review of PR #16; fixes by EndoForge conductor atom SWEEP iterations 5 and 6; records by the agent records lane (agent analysis is not independent).
+- P1 fixed: the `# noqa: BLE001` comment in `foundation_template_bridge/server.py` broke the no-comments rule. It is removed; ruff 0.17.0's default rules include BLE001, so the broad handler is allowed by a per-file ignore in `foundation_template_bridge/ruff.toml` (rationale in [SDD §7.1](../architecture/architecture.md#71-broad-exception-handler)). `tests/test_source_rules.py` now fails on any comment or docstring in Python source.
+- P2 fixed: `tools/gen_reports.py` counted every `GAP-TPL-` ID in the SRS, so the six closed gaps would have been reported as untested. It now counts only gap-table rows not marked Closed (REQ-TPL-020), tested by two new tests in `tests/test_gen_reports.py`.
+- Trace check after the fix: 20 requirements, 20 traced; 36 tests, 30 traced to requirements, 6 supporting; 0 problems. ruff 0.17.0 `check --no-cache .`: 0 findings.
+
+| ID | Severity | Finding | Location | Issue | Status |
+|---|---|---|---|---|---|
+| F-8 | S4 | A `noqa` code comment broke the no-comments rule; the rule had no test (Codex P1) | `foundation_template_bridge/server.py` | PR #16 | Closed 2026-11-10: per-file ignore in `foundation_template_bridge/ruff.toml`; `tests/test_source_rules.py` (atom commit 4f55f21) |
+| F-9 | S3 | The test report counted closed gaps as untested behaviour (Codex P2) | `tools/gen_reports.py` | PR #16 | Closed 2026-11-10: REQ-TPL-020; `tests/test_gen_reports.py` (atom commit 4f55f21) |
+
+## Entry 2026-11-10 — findings sweep (atom commit 28ecad1)
+
+- Analyzed by: agent records lane of the family findings sweep (agent analysis is not independent).
+- Inputs: branch `fix/findings-sweep` at 28ecad1 (EndoForge conductor atom SWEEP, iterations 1 to 4); the family findings file for this repository; the baseline entry below.
+- Code changes in the atom: tests for GAP-TPL-001 to GAP-TPL-006 and F-7; the F-3 docstring removed; a `ruff` CI job; `tools/build_manifest.py` takes the manifest `version` from `foundation_template.__version__`; `encode_response` also withholds results that raise `TypeError` (sets, arbitrary objects), which before escaped as an exception; `server.main` points stdout at the null device after a failed final flush so a broken pipe exits 2 with empty stderr; ruff-driven tidying (import order, `check=False` on subprocess calls, unused-argument names) with no behaviour change.
+
+### Requirements and testing analysis
+
+GAP-TPL-001 to GAP-TPL-006 are closed and baselined as REQ-TPL-014 to REQ-TPL-019; F-7 is covered by REQ-TPL-019. Seven tests added: five in `tests/test_bridge.py::GapTests`, two in `tests/test_build_manifest.py::ManifestToolTests`. Trace check: 19 requirements, 19 traced; 31 tests, 28 traced to requirements, 3 supporting; 0 problems. No untested behaviour is open.
+
+### Source code quality
+
+| Tool | Command | Findings (new / total) |
+|---|---|---|
+| ruff 0.17.0 (CI gate from this change) | `ruff check --no-cache .` | 0 / 0 ("All checks passed!") |
+
+The broad `except Exception` in `Bridge.dispatch` carried `# noqa: BLE001` at this entry; it was replaced by a configuration ignore after the Codex review (entry above). Rationale in [SDD §7.1](../architecture/architecture.md#71-broad-exception-handler).
+
+### Findings status
+
+F-3, F-4 and F-7 closed; F-6 partly closed (static analyzer in CI). Still open: F-5 (Cstack must repin its vendored copy after this change merges, because the manifest digest and file count change) and the branch-protection half of F-6 (a GitHub setting, outside the repository).
 
 ## Entry 2026-11-08 — baseline fb9993c (documentation baseline PR)
 
@@ -60,11 +94,11 @@ The previous SDD said the manifest tool prints "the three pins": confirmed (`fil
 |---|---|---|---|---|---|
 | F-1 | S4 | The ICD said "bounded decimal strings" cross the bridge; the template accepts integers only | `docs/icd/icd-cstack.md` | — | Closed: document corrected |
 | F-2 | S4 | The SCMP and AGENTS.md said gitleaks and TruffleHog run before every push; only gitleaks runs, in CI | `docs/configuration/configuration-management.md`, `AGENTS.md` | — | Closed: documents corrected |
-| F-3 | S4 | `tests/test_input_limits.py` has a class docstring, against the no-comments rule | `tests/test_input_limits.py` | — | Open |
-| F-4 | S3 | Six untested behaviours (GAP-TPL-001 to GAP-TPL-006), inherited by every copy | `foundation_template_bridge/server.py`, `tools/build_manifest.py` | — | Open: candidates for tests |
+| F-3 | S4 | `tests/test_input_limits.py` has a class docstring, against the no-comments rule | `tests/test_input_limits.py` | — | Closed 2026-11-10: docstring removed (atom commit 28ecad1) |
+| F-4 | S3 | Six untested behaviours (GAP-TPL-001 to GAP-TPL-006), inherited by every copy | `foundation_template_bridge/server.py`, `tools/build_manifest.py` | — | Closed 2026-11-10: each gap has a test named after it and a requirement, REQ-TPL-014 to REQ-TPL-019 (atom commit 28ecad1) |
 | F-5 | S3 | Cstack's vendored copy pins an older manifest | Cstack `adapters/template_stdio.py` | — | Open: repin after merge |
-| F-6 | S3 | `main` has no branch protection; no static analyzer in CI | GitHub settings, `.github/workflows/ci.yml` | — | Open: SMP risks R-2, R-3 |
-| F-7 | S4 | Version `0.1.0` is written in `foundation_template/__init__.py` and `tools/build_manifest.py` with no check that they agree | those files | — | Open |
+| F-6 | S3 | `main` has no branch protection; no static analyzer in CI | GitHub settings, `.github/workflows/ci.yml` | — | Partly closed 2026-11-10: CI job `ruff` runs `uvx ruff@0.17.0 check .` (atom commit 28ecad1). Open: branch protection on `main` (SMP risk R-2) |
+| F-7 | S4 | Version `0.1.0` is written in `foundation_template/__init__.py` and `tools/build_manifest.py` with no check that they agree | those files | — | Closed 2026-11-10: `tools/build_manifest.py` reads `__version__`; `tests/test_build_manifest.py::ManifestToolTests.test_f7_manifest_version_follows_package_version` checks it (atom commit 28ecad1) |
 
 ### Overall assessment
 
@@ -75,3 +109,5 @@ The code matches its documentation after the corrections above. The bridge's inp
 | Version | Date | Commit | Change | Reviewed in |
 |---|---|---|---|---|
 | 1.0 | 2026-11-08 | fb9993c | Initial baseline | PR adding the NASA-standard documentation set |
+| 1.1 | 2026-11-10 | 28ecad1 | Findings-sweep entry; F-3, F-4, F-7 closed; F-6 partly closed | PR closing the family findings sweep for this repository |
+| 1.2 | 2026-11-10 | 4f55f21 | Codex review entry: F-8 (P1) and F-9 (P2) closed | Codex review of PR #16 |

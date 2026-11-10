@@ -13,7 +13,7 @@ python -B -m unittest discover -s tests -t .
 python -B -O -m unittest discover -s tests -t .
 ```
 
-CI runs the same commands with `uv run --no-project --python 3.12`.
+CI runs the same commands with `uv run --no-project --python 3.12`, plus `uvx ruff@0.17.0 check .`.
 
 ## Rebuild the source manifest
 

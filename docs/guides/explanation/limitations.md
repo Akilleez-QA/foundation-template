@@ -30,4 +30,3 @@ Requests are untrusted. The bridge bounds every frame, refuses unknown fields, n
 |---|---|---|
 | Placeholder tool only | No domain use | — |
 | Integer-only numeric profile | Decimal inputs are refused; a copy that needs them must widen the parser | — |
-| Several bridge error paths have no test (GAP-TPL-001 to GAP-TPL-006) | Copies inherit those untested paths | — |

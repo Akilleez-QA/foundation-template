@@ -220,7 +220,7 @@ In short, for a Foundation called `foundation-acoustics`:
 - The only tool is a placeholder that echoes its input; it has no subject meaning.
 - The numeric profile is integers only. A copy that needs decimals must add a
   bounded decimal parser (foundation-refrigeration has one), with requirements and tests.
-- Several bridge error paths have no test, and copies inherit those gaps
+- Every known bridge error path has a test; the former gaps are closed
   ([list](docs/requirements/requirements.md#9-untested-behaviour-gaps)).
 - Version 0.1.0, not yet released or tagged.
 
@@ -278,7 +278,7 @@ safety-critical; not a NASA compliance determination (see the
 - [All control documents with IDs](docs/README.md#engineering-records)
 
 CI runs the tests in normal and optimized mode on Python 3.12, scans the history
-with gitleaks and checks that the source manifest is up to date.
+with gitleaks, runs ruff 0.17.0 and checks that the source manifest is up to date.
 
 ## License
 

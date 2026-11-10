@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 
 from foundation_template import __version__
 from foundation_template.tools import TOOL_NAMES, run
+
 from .schemas import tool_definitions
 
 PROTOCOL = "foundation-template-jsonrpc/1"
@@ -34,7 +36,7 @@ def _integer(token):
     return int(token)
 
 
-def _no_float(token):
+def _no_float(_token):
     raise WireError(-32700, "Only bounded integers are in this numeric profile")
 
 
@@ -149,7 +151,7 @@ def encode_response(response):
                          separators=(",", ":")).encode("ascii")
         if len(raw) > LIMITS["outputFrameBytes"]:
             raise WireError(-32002, "Output frame exceeds bridge byte limit; result withheld")
-    except (ValueError, OverflowError, RecursionError) as error:
+    except (TypeError, ValueError, OverflowError, RecursionError) as error:
         code = error.code if isinstance(error, WireError) else -32603
         raw = json.dumps(_error(response.get("id"), code, "Result withheld"), separators=(",", ":")).encode("ascii")
     return raw + b"\n"
@@ -168,7 +170,7 @@ def serve(source, sink) -> int:
                 sink.write(encode_response(response))
                 sink.flush()
         return 0
-    except (BrokenPipeError, OSError):
+    except OSError:
         return 2
 
 
@@ -176,4 +178,11 @@ def main() -> int:
     if len(sys.argv) != 1:
         sys.stderr.write("This bridge accepts no command-line options or paths; send bounded JSON-RPC on stdin.\n")
         return 2
-    return serve(sys.stdin.buffer, sys.stdout.buffer)
+    status = serve(sys.stdin.buffer, sys.stdout.buffer)
+    try:
+        sys.stdout.flush()
+    except OSError:
+        null = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(null, sys.stdout.fileno())
+        os.close(null)
+    return status
