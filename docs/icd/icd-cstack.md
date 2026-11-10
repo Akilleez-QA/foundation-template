@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | FTEMPLATE-ICD-CSTACK |
-| Version | 2.0 |
+| Version | 2.1 |
 | Status | Baselined |
 | Owner | Akilleez-QA |
-| Date | 2026-11-08 |
+| Date | 2026-11-10 |
 | Baseline commit | fb9993c55e9c708a3cfdd295b237466d4bef7ff1 |
 | Applies to | foundation-template main at baseline commit |
 | Classification | Self-assessed Class E analog; not safety-critical (see SMP §1) |
@@ -61,15 +61,18 @@ Numbers on the wire must be integers of at most 15 digits. Any fraction, exponen
 | Oversized line | Error, then exit 2 | Restart the bridge | `tests/test_input_limits.py::InputLimitTests.test_req_tpl_007_stream_frame_bytes` |
 | `tools/call` before `initialize` | `-32000` | Initialize once | `tests/test_bridge.py::BridgeTests.test_wire_profile_fails_closed` |
 | Unknown tool | `-32602` | Use a listed tool | `tests/test_bridge.py::BridgeTests.test_wire_profile_fails_closed` |
-| Wrong protocol; second `initialize`; bad envelope or id | `-32001`; `-32000`; `-32600` | Fix the request | none (GAP-TPL-001, GAP-TPL-004) |
+| Wrong protocol; second `initialize`; `tools/list` before `initialize` | `-32001`; `-32000`; `-32000` | Fix the request | `tests/test_bridge.py::GapTests.test_gap_tpl_001_handshake_order_and_protocol_version` |
+| Batch, extra field, wrong `jsonrpc`, bad `method` or `id` | `-32600` with a null `id`; a request without `id` gets no response and has no effect | Fix the request | `tests/test_bridge.py::GapTests.test_gap_tpl_004_envelope_is_refused_and_notifications_get_no_reply` |
+| Last line without a newline; stdout closed | `-32002`, then exit 2; exit 2 with empty stderr | Restart the bridge | `tests/test_bridge.py::GapTests.test_gap_tpl_005_unterminated_frame_and_broken_pipe_exit_2` |
 | Bad tool arguments | Result with `isError: true`, assessment `tool_error`, `receipt.error` message, one Evidence entry | Treat as no result | `tests/test_bridge.py::BridgeTests.test_bad_arguments_are_a_tool_error_that_still_carries_evidence` |
-| Internal error; oversized result | `-32603`; "Result withheld" | Report a problem | none (GAP-TPL-002, GAP-TPL-003) |
+| Internal error | `-32603` "Internal bridge error; no evidence result is available", no exception detail | Report a problem | `tests/test_bridge.py::GapTests.test_gap_tpl_003_unexpected_exception_becomes_internal_error` |
+| Result over 1 048 576 bytes; result not encodable as strict JSON | `-32002` or `-32603` "Result withheld", with the request `id` | Report a problem | `tests/test_bridge.py::GapTests.test_gap_tpl_002_oversized_or_unencodable_response_is_withheld` |
 
 ## 5. Identity, versioning and compatibility
 
-`python -B tools/build_manifest.py` prints the three pins: `{"files": <count>, "sha256": <manifest SHA-256>, "inventory_sha256": <SHA-256 of the canonical inventory>}`. The canonical inventory is `json.dumps(tool_definitions(), ensure_ascii=True, allow_nan=False, sort_keys=True, separators=(",", ":"))`; `--inventory` prints it. Current values for main are in the latest [version description](../releases/README.md).
+`python -B tools/build_manifest.py` prints the three pins: `{"files": <count>, "sha256": <manifest SHA-256>, "inventory_sha256": <SHA-256 of the canonical inventory>}`. The canonical inventory is `json.dumps(tool_definitions(), ensure_ascii=True, allow_nan=False, sort_keys=True, separators=(",", ":"))`; `--inventory` prints it and writes nothing (`tests/test_build_manifest.py::ManifestToolTests.test_gap_tpl_006_inventory_and_manifest_summary`). Current values for main are in the latest [version description](../releases/README.md).
 
-Versions: `foundation_template.__version__` and the manifest `version` field are both `0.1.0`. Breaking changes: the protocol identifier, the method set, tool names or order, input or output schemas, the receipt shape, or the limits. Any change to a covered file changes the manifest pin; the consumer repins in the same change that updates its vendored copy.
+Versions: `foundation_template.__version__` is `0.1.0`; `tools/build_manifest.py` copies it into the manifest `version` field, so the two always agree (`tests/test_build_manifest.py::ManifestToolTests.test_f7_manifest_version_follows_package_version`). Breaking changes: the protocol identifier, the method set, tool names or order, input or output schemas, the receipt shape, or the limits. Any change to a covered file changes the manifest pin; the consumer repins in the same change that updates its vendored copy.
 
 ## 6. Security and input bounds
 
@@ -98,3 +101,4 @@ A change to this interface needs a change request, both test modes passing, upda
 | 1.0 | 2026-10-30 | fbfaadb | Bridge interface summary | Initial commit |
 | 1.1 | 2026-11-03 | ab81203 | Manifest excludes the root `.github/` tree | PR #10 |
 | 2.0 | 2026-11-08 | fb9993c | NASA-standard structure; corrected the numeric rule (integers only; no decimal strings); added `ping`, errors, identity and security | PR adding the NASA-standard documentation set |
+| 2.1 | 2026-11-10 | 28ecad1 | Error table: formerly untested paths now cite their tests; manifest version taken from the package | PR closing the family findings sweep for this repository |

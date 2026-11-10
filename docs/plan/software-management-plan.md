@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | FTEMPLATE-SMP |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Baselined |
 | Owner | Akilleez-QA |
-| Date | 2026-11-08 |
+| Date | 2026-11-10 |
 | Baseline commit | fb9993c55e9c708a3cfdd295b237466d4bef7ff1 |
 | Applies to | foundation-template main at baseline commit |
 | Classification | Self-assessed Class E analog; not safety-critical (see SMP §1) |
@@ -41,7 +41,8 @@ Trunk-based development on `main`; every change is a pull request with one conce
 | Test runner | `unittest`, normal and `-O` modes | `.github/workflows/ci.yml` |
 | CI environment | `actions/checkout@v4`, `astral-sh/setup-uv@v7`, `ubuntu-latest` | `.github/workflows/ci.yml` |
 | Secret scan | gitleaks 8.28.0 | `.github/workflows/ci.yml` |
-| Static analysis / type check | None configured | — (risk R-3) |
+| Static analysis | ruff 0.17.0, default rule set | `.github/workflows/ci.yml` |
+| Type check | None configured | — (risk R-3) |
 
 ## 5. Verification and validation approach
 
@@ -57,6 +58,7 @@ One maintainer, so no organizational independence; agent reviewers and CI gates 
 | Tests, optimized | same with `-O` | Any failing test with `-O` | CI log; STR |
 | Secret scan | `gitleaks git --redact --no-banner --exit-code 1 --config .gitleaks.toml .` | Any finding in history | CI log; STR |
 | Manifest | `uv run --no-project --python 3.12 python -B tools/build_manifest.py` then `git diff --exit-code SOURCE-MANIFEST.json` | Manifest differs from the tree | CI log |
+| Static analysis | `uvx ruff@0.17.0 check .` | Any ruff finding | CI log |
 | Trace and links | `python -B tools/check_trace.py` (also run by the tests) | Untraced requirement, missing test, unallocated requirement, dead link | STR; SAR |
 
 ## 7. Security, privacy and secure coding
@@ -68,7 +70,7 @@ Attack surface: JSON-RPC on stdin. No options, paths, network, child processes o
 | Component | Use | License | Pin |
 |---|---|---|---|
 | Python standard library | Runtime | PSF License | Runtime version |
-| `actions/checkout@v4`, `astral-sh/setup-uv@v7`, gitleaks 8.28.0 | CI only | Their own licenses | Major-version tags; gitleaks by exact release |
+| `actions/checkout@v4`, `astral-sh/setup-uv@v7`, gitleaks 8.28.0, ruff 0.17.0 | CI only | Their own licenses | Major-version tags; gitleaks and ruff by exact release |
 
 No third-party code is shipped or vendored. Reuse: GPL-3.0-only, with commercial licenses available ([NOTICE.md](../../NOTICE.md)).
 
@@ -102,9 +104,9 @@ Reviewed at every release. Likelihood (L) and consequence (C) are 1–5.
 
 | ID | Risk | L | C | Mitigation | Status | Issue |
 |---|---|---|---|---|---|---|
-| R-1 | A bridge defect here is copied into every new Foundation | 2 | 4 | Input-limit tests at each boundary; gaps listed in the SRS; CHANGELOG says when to port a fix | Open | — |
+| R-1 | A bridge defect here is copied into every new Foundation | 2 | 4 | Input-limit tests at each boundary; every bridge error path tested (GAP-TPL-001 to GAP-TPL-006 closed); CHANGELOG says when to port a fix | Open | — |
 | R-2 | `main` has no branch protection, so a change could merge with failing CI | 2 | 3 | Maintainer merges only after checks pass | Open | — |
-| R-3 | No static analysis or type checking | 3 | 2 | Small code base; tests in two modes | Open | — |
+| R-3 | No type checking; static analysis limited to ruff's default rules | 2 | 2 | ruff 0.17.0 in CI; small code base; tests in two modes | Open | — |
 | R-4 | A copy keeps template wording (placeholder tool, REQ-TPL IDs, "foundation-template") that no longer fits | 3 | 2 | [Start a new Foundation](../guides/how-to/start-a-new-foundation.md) lists every rename; `tools/check_trace.py` fails on stale IDs or dead links | Open | — |
 
 ## 13. Measurement
@@ -124,3 +126,4 @@ The [documentation index](../README.md) lists every control document and guide.
 | Version | Date | Commit | Change | Reviewed in |
 |---|---|---|---|---|
 | 1.0 | 2026-11-08 | fb9993c | Initial baseline | PR adding the NASA-standard documentation set |
+| 1.1 | 2026-11-10 | 28ecad1 | ruff 0.17.0 in the environment, gates and tool list; R-1 and R-3 updated | PR closing the family findings sweep for this repository |

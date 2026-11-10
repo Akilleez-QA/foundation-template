@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | FTEMPLATE-SRS |
-| Version | 2.1 |
+| Version | 2.2 |
 | Status | Baselined |
 | Owner | Akilleez-QA |
-| Date | 2026-11-09 |
+| Date | 2026-11-10 |
 | Baseline commit | fb9993c55e9c708a3cfdd295b237466d4bef7ff1 |
 | Applies to | foundation-template main at baseline commit |
 | Classification | Self-assessed Class E analog; not safety-critical (see SMP §1) |
@@ -17,9 +17,9 @@
 
 ### 1.1 Purpose and audience
 
-This document states what foundation-template does, as inspected in the code and checked by its tests. It serves two readers: someone changing the template itself, and someone copying it to start a new Foundation. A copy keeps the record format and the general requirements (REQ-TPL-002 to REQ-TPL-011), renames the prefix, and replaces REQ-TPL-001 and REQ-TPL-012 with its own domain tools. See [Start a new Foundation](../guides/how-to/start-a-new-foundation.md).
+This document states what foundation-template does, as inspected in the code and checked by its tests. It serves two readers: someone changing the template itself, and someone copying it to start a new Foundation. A copy keeps the record format and the general requirements (REQ-TPL-002 to REQ-TPL-011 and REQ-TPL-013 to REQ-TPL-019), renames the prefix, and replaces REQ-TPL-001 and REQ-TPL-012 with its own domain tools. See [Start a new Foundation](../guides/how-to/start-a-new-foundation.md).
 
-Every requirement below is behaviour the code has and a test or inspection checks. Behaviour the code has but no test checks is listed in §9 as a gap.
+Every requirement below is behaviour the code has and a test or inspection checks. Behaviour the code has but no test checks is listed in §9 as a gap until a test closes it.
 
 ### 1.2 Scope
 
@@ -169,18 +169,78 @@ The bridge process shall exit 0 when stdin closes after complete frames, and exi
 - Verification: T
 - Status: Baselined
 
+### REQ-TPL-014 — Handshake order and protocol version
+
+The bridge shall answer `initialize` with any `protocolVersion` other than `foundation-template-jsonrpc/1` with `-32001`, leaving the bridge uninitialized; answer a second `initialize` after a successful one with `-32000`; and answer `tools/list` before `initialize` with `-32000`.
+
+- Rationale: The host sees a refused handshake explicitly instead of a session in an unknown state ([ICD §2](../icd/icd-cstack.md#2-interface-type-and-transport)). Formerly GAP-TPL-001.
+- Derivation: `foundation_template_bridge/server.py`
+- Allocated to: SDD §4 (bridge server)
+- Verification: T
+- Status: Baselined
+
+### REQ-TPL-015 — Output frame limit
+
+The bridge shall send a response of at most 1 048 576 bytes (excluding the newline) unchanged, replace a larger response with error `-32002` "Result withheld", and replace a response that cannot be encoded as strict JSON (NaN, Infinity, a circular reference or a non-JSON type) with error `-32603` "Result withheld", keeping the request `id` in both cases.
+
+- Rationale: Bounded output on the host side; a malformed result is never sent ([ICD §6](../icd/icd-cstack.md#6-security-and-input-bounds)). Formerly GAP-TPL-002.
+- Derivation: `foundation_template_bridge/server.py`
+- Allocated to: SDD §4 (bridge server)
+- Verification: T
+- Status: Baselined
+
+### REQ-TPL-016 — Internal error containment
+
+An unexpected exception while handling a request shall be answered with `-32603` "Internal bridge error; no evidence result is available" and the request `id`, with no exception detail in the response.
+
+- Rationale: A defect in a tool or the inventory must not crash the session or leak internal detail; the host gets no evidence result and reports a problem. Formerly GAP-TPL-003.
+- Derivation: `foundation_template_bridge/server.py`
+- Allocated to: SDD §4 (bridge server)
+- Verification: T
+- Status: Baselined
+
+### REQ-TPL-017 — Request envelope and notifications
+
+The bridge shall refuse with `-32600` and a null `id` any message that is not a single JSON object, has a field other than `jsonrpc`, `id`, `method` and `params`, has `jsonrpc` other than `"2.0"`, has a missing, non-string or empty `method`, or has an `id` that is null, a boolean, an array, an object or a string over 128 characters; a well-formed request without `id` shall get no response and have no effect.
+
+- Rationale: One closed request shape the host can verify; batches and notifications are not part of the protocol ([ICD §2](../icd/icd-cstack.md#2-interface-type-and-transport)). Formerly GAP-TPL-004.
+- Derivation: `foundation_template_bridge/server.py`
+- Allocated to: SDD §4 (bridge server)
+- Verification: T
+- Status: Baselined
+
+### REQ-TPL-018 — Session end on an unterminated frame or broken output
+
+When the last line on stdin has no newline, the bridge shall answer it with `-32002` and a null `id` and exit 2; when its stdout is closed or the pipe is broken, the bridge process shall exit 2 and write nothing to stderr.
+
+- Rationale: The host can tell a truncated or abandoned session from a clean stop (REQ-TPL-011) without parsing a traceback. Formerly GAP-TPL-005.
+- Derivation: `foundation_template_bridge/server.py`, `foundation_template_bridge/__main__.py`
+- Allocated to: SDD §4 (bridge server, bridge entry point)
+- Verification: T
+- Status: Baselined
+
+### REQ-TPL-019 — Manifest tool output and version
+
+`python -B tools/build_manifest.py --inventory` shall print the canonical tool inventory and a newline without writing the manifest; the normal run shall write `SOURCE-MANIFEST.json` with `version` equal to `foundation_template.__version__` and print a JSON object with exactly `files`, `sha256` and `inventory_sha256`.
+
+- Rationale: These are the pins the host records ([ICD §5](../icd/icd-cstack.md#5-identity-versioning-and-compatibility)); taking the version from the package means the two cannot disagree. Formerly GAP-TPL-006 and assurance finding F-7.
+- Derivation: `tools/build_manifest.py`, `foundation_template/__init__.py`
+- Allocated to: SDD §4 (manifest tool, package version)
+- Verification: T
+- Status: Baselined
+
 ## 9. Untested behaviour (gaps)
 
-The code does the following, but no test checks it. These are not baselined requirements; each is a candidate for a test. Found by reading the code at the baseline commit and searching `tests/` for the code path.
+No untested behaviour is open. The gaps found at the documentation baseline by reading the code and searching `tests/` for each code path are closed: each now has a test and a requirement. Gap IDs are never reused.
 
-| Gap | Behaviour in code | Where | Missing test |
+| Gap | Behaviour in code | Where | Status |
 |---|---|---|---|
-| GAP-TPL-001 | A wrong `protocolVersion` gives `-32001`; a second `initialize` gives `-32000`; `tools/list` before `initialize` gives `-32000` | `foundation_template_bridge/server.py` `Bridge.dispatch` | No test sends these |
-| GAP-TPL-002 | A response over 1 048 576 bytes, or one that cannot be encoded, is replaced by an error "Result withheld" | `foundation_template_bridge/server.py` `encode_response` | No test produces one |
-| GAP-TPL-003 | An unexpected exception becomes `-32603` | `foundation_template_bridge/server.py` | No test reaches it |
-| GAP-TPL-004 | Batches, extra envelope fields, a wrong `jsonrpc` value and bad `id` types are refused with `-32600`; a request without `id` gets no response | `foundation_template_bridge/server.py` `Bridge.dispatch` | No test sends these |
-| GAP-TPL-005 | A final frame without a newline closes the session with exit 2; a broken output pipe exits 2 | `foundation_template_bridge/server.py` `serve` | No test sends an unterminated frame or closes stdout |
-| GAP-TPL-006 | `python -B tools/build_manifest.py --inventory` prints the canonical inventory; the normal run prints `files`, `sha256` and `inventory_sha256` | `tools/build_manifest.py` | No test runs the tool |
+| GAP-TPL-001 | A wrong `protocolVersion` gives `-32001`; a second `initialize` gives `-32000`; `tools/list` before `initialize` gives `-32000` | `foundation_template_bridge/server.py` `Bridge.dispatch` | Closed: `tests/test_bridge.py::GapTests.test_gap_tpl_001_handshake_order_and_protocol_version`; now REQ-TPL-014 |
+| GAP-TPL-002 | A response over 1 048 576 bytes, or one that cannot be encoded, is replaced by an error "Result withheld" | `foundation_template_bridge/server.py` `encode_response` | Closed: `tests/test_bridge.py::GapTests.test_gap_tpl_002_oversized_or_unencodable_response_is_withheld`; now REQ-TPL-015 |
+| GAP-TPL-003 | An unexpected exception becomes `-32603` | `foundation_template_bridge/server.py` | Closed: `tests/test_bridge.py::GapTests.test_gap_tpl_003_unexpected_exception_becomes_internal_error`; now REQ-TPL-016 |
+| GAP-TPL-004 | Batches, extra envelope fields, a wrong `jsonrpc` value and bad `id` types are refused with `-32600`; a request without `id` gets no response | `foundation_template_bridge/server.py` `Bridge.dispatch` | Closed: `tests/test_bridge.py::GapTests.test_gap_tpl_004_envelope_is_refused_and_notifications_get_no_reply`; now REQ-TPL-017 |
+| GAP-TPL-005 | A final frame without a newline closes the session with exit 2; a broken output pipe exits 2 | `foundation_template_bridge/server.py` `serve` | Closed: `tests/test_bridge.py::GapTests.test_gap_tpl_005_unterminated_frame_and_broken_pipe_exit_2`; now REQ-TPL-018 |
+| GAP-TPL-006 | `python -B tools/build_manifest.py --inventory` prints the canonical inventory; the normal run prints `files`, `sha256` and `inventory_sha256` | `tools/build_manifest.py` | Closed: `tests/test_build_manifest.py::ManifestToolTests.test_gap_tpl_006_inventory_and_manifest_summary`; now REQ-TPL-019 |
 
 ## 10. Non-functional requirements
 
@@ -200,7 +260,7 @@ Test (T): automated `unittest` tests, run by `python -B -m unittest discover -s 
 
 | ID | TBD / question | Owner | Issue |
 |---|---|---|---|
-| — | None. Untested behaviour is listed in §9. | — | — |
+| — | None. No untested behaviour is open (§9). | — | — |
 
 ## Change history
 
@@ -210,3 +270,4 @@ Test (T): automated `unittest` tests, run by `python -B -m unittest discover -s 
 | 1.2 | 2026-11-03 | ab81203 | REQ-TPL-002 excludes the root `.github/` tree | PR #10 |
 | 2.0 | 2026-11-08 | fb9993c | NASA-standard record format; REQ-TPL-008 to REQ-TPL-012 added for tested behaviour; untested behaviour listed as gaps | PR adding the NASA-standard documentation set |
 | 2.1 | 2026-11-09 | 3814683 | REQ-TPL-013 (test report verdict) | PR fixing the 2026-11-09 backfill-review findings |
+| 2.2 | 2026-11-10 | 28ecad1 | REQ-TPL-014 to REQ-TPL-019 for behaviour now tested; GAP-TPL-001 to GAP-TPL-006 closed; REQ-TPL-019 covers the manifest version (F-7) | PR closing the family findings sweep for this repository |

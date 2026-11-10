@@ -51,7 +51,8 @@ python -B -O -m unittest discover -s tests -t .
 ```
 
 CI uses Python 3.12 through `uv run --no-project --python 3.12`, runs both test
-modes, scans with Gitleaks, and regenerates the manifest to check for a diff.
+modes, scans with Gitleaks, runs `uvx ruff@0.17.0 check .`, and regenerates the
+manifest to check for a diff.
 See [the workflow](.github/workflows/ci.yml). Report the commands run, interpreter
 version, outcomes, and any unrun checks. Missing or interrupted checks do not pass.
 Do not weaken checks or edit expected test results to obtain a pass.

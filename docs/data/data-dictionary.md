@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Document ID | FTEMPLATE-DD |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Baselined |
 | Owner | Akilleez-QA |
-| Date | 2026-11-08 |
+| Date | 2026-11-10 |
 | Baseline commit | fb9993c55e9c708a3cfdd295b237466d4bef7ff1 |
 | Applies to | foundation-template main at baseline commit |
 | Classification | Self-assessed Class E analog; not safety-critical (see SMP §1) |
@@ -50,7 +50,7 @@ Receipt (inside every `tools/call` result):
 | Record / file | Format | Schema | Producer | Consumer | Retention |
 |---|---|---|---|---|---|
 | JSON-RPC lines | UTF-8 in, ASCII out, one per line | JSON-RPC 2.0, `foundation-template-jsonrpc/1` | Host / bridge | Bridge / host | Not stored |
-| `SOURCE-MANIFEST.json` | JSON, sorted keys, indent 2 | `foundation-template-source-manifest/1`: `schema`, `version`, `files` (path → SHA-256) | `tools/build_manifest.py` | Host pin; `tests/test_bridge.py` | Committed |
+| `SOURCE-MANIFEST.json` | JSON, sorted keys, indent 2 | `foundation-template-source-manifest/1`: `schema`, `version` (equal to `foundation_template.__version__`, REQ-TPL-019), `files` (path → SHA-256) | `tools/build_manifest.py` | Host pin; `tests/test_bridge.py`, `tests/test_build_manifest.py` | Committed |
 
 ## 4. Reference data provenance
 
@@ -71,10 +71,10 @@ None. The bridge reads no configuration file, environment variable or option.
 | Limit | Value | Enforced in | Test |
 |---|---|---|---|
 | Input frame | 65 536 bytes | `server.decode_frame`, `server.serve` | `tests/test_input_limits.py::InputLimitTests.test_req_tpl_007_frame_bytes` |
-| Output frame | 1 048 576 bytes | `server.encode_response` | none (GAP-TPL-002) |
+| Output frame | 1 048 576 bytes, excluding the newline | `server.encode_response` | `tests/test_bridge.py::GapTests.test_gap_tpl_002_oversized_or_unencodable_response_is_withheld` (REQ-TPL-015) |
 | JSON depth / nodes / string | 32 / 4096 / 1024 characters | `server.decode_frame` | `tests/test_input_limits.py` |
 | Integer digits | 15 | `server._integer` | `tests/test_input_limits.py::InputLimitTests.test_req_tpl_007_integer_digits` |
-| Request id string | 128 characters | `server.Bridge.dispatch` | none (GAP-TPL-004) |
+| Request id string | 128 characters | `server.Bridge.dispatch` | `tests/test_bridge.py::GapTests.test_gap_tpl_004_envelope_is_refused_and_notifications_get_no_reply` (REQ-TPL-017) |
 | Evidence entries per receipt | 1–16 (schema) | `schemas.output` | `tests/test_bridge.py` (non-empty only) |
 
 ## Change history
@@ -82,3 +82,4 @@ None. The bridge reads no configuration file, environment variable or option.
 | Version | Date | Commit | Change | Reviewed in |
 |---|---|---|---|---|
 | 1.0 | 2026-11-08 | fb9993c | Initial baseline | PR adding the NASA-standard documentation set |
+| 1.1 | 2026-11-10 | 28ecad1 | Manifest `version` comes from `foundation_template.__version__`; output-frame and request-id limits now tested (REQ-TPL-015, REQ-TPL-017) | PR closing the family findings sweep for this repository |
