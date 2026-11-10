@@ -44,11 +44,12 @@
     "tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "tests/test_bridge.py": "b1704d14fa52b02ef068dcde22d1c7d09d4357aa75a7deec050263d26a9193f1",
     "tests/test_docs_trace.py": "29dfa169b487528c3c8992fec81bf462f0869db000e075f5443491d82947d038",
+    "tests/test_gen_reports.py": "9d935b3745862218b0e74d579fd4c789371be9569e10cb197f1d6ad23440be5b",
     "tests/test_input_limits.py": "c7bb995e956fcc8ca8fc77d5c13c3ac1d4acefc1b65f66bab7fe049fac0307ae",
     "tools/build_manifest.py": "a7a5352d92edc92bc435d344af76d8180f490fd9add96e372afa99f31e6bfa80",
     "tools/check_trace.py": "e4a7fa4ffd28ab60459a42679326519aa3f6743e5625f84b7d8b988f804440fc",
     "tools/gen_docs.py": "19403fe5d291e94e308bb284202bc6623d3e645ec3fbc693cdc35420118691b7",
-    "tools/gen_reports.py": "bcaf0dc0ac695564e94d938e044a5a833c9971e7aa1bf7481710d335e922fa2e"
+    "tools/gen_reports.py": "8fbee9c25493ab3e29593842058701d3663c4f0ab82222a0d45f0dce6c7d7431"
   },
   "schema": "foundation-template-source-manifest/1",
   "version": "0.1.0"
