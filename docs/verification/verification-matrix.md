@@ -32,6 +32,7 @@ Method: T test, I inspection.
 | REQ-TPL-010 | T | `tests/test_bridge.py::BridgeTests.test_wire_profile_fails_closed` | Duplicate `id`, `1.5` and `NaN` each give `-32700` | [STR-unreleased](reports/STR-unreleased.md) |
 | REQ-TPL-011 | T | `tests/test_bridge.py::BridgeTests.test_handshake_catalog_and_echo_with_evidence`<br>`tests/test_bridge.py::BridgeTests.test_wire_profile_fails_closed`<br>`tests/test_input_limits.py::InputLimitTests.test_req_tpl_007_stream_frame_bytes` | Exit 0 after a complete session; exit 2 for an oversized frame and for `--root /` | [STR-unreleased](reports/STR-unreleased.md) |
 | REQ-TPL-012 | T | `tests/test_bridge.py::BridgeTests.test_bad_arguments_are_a_tool_error_that_still_carries_evidence` | `{}`, empty string, integer, extra field and 257 characters are each a tool error | [STR-unreleased](reports/STR-unreleased.md) |
+| REQ-TPL-013 | T | `tests/test_gen_reports.py::GenerateReportsTests.test_clean_runs_and_gates_pass`<br>`tests/test_gen_reports.py::GenerateReportsTests.test_main_exits_nonzero_when_gitleaks_finds_a_secret`<br>`tests/test_gen_reports.py::GenerateReportsTests.test_failing_gate_fails_the_report`<br>`tests/test_gen_reports.py::GenerateReportsTests.test_gate_not_run_fails_the_report`<br>`tests/test_gen_reports.py::GenerateReportsTests.test_skipped_test_fails_the_report`<br>`tests/test_gen_reports.py::GenerateReportsTests.test_expected_failure_fails_the_report`<br>`tests/test_gen_reports.py::GenerateReportsTests.test_unparsed_test_outcome_fails_the_report`<br>`tests/test_gen_reports.py::GenerateReportsTests.test_trace_problem_fails_the_report`<br>`tests/test_gen_reports.py::GenerateReportsTests.test_empty_suite_fails_the_report` | `main()` with stubbed suites and gates: clean runs pass with exit 0; a Gitleaks finding, a stale catalog, a changed manifest, Gitleaks not installed, a skip, an expected failure, an unparsed outcome, a trace problem and an empty suite each give FAILED and exit 1 | [STR-unreleased](reports/STR-unreleased.md) |
 
 ## Tests without a requirement
 
@@ -40,15 +41,6 @@ Method: T test, I inspection.
 | `tests/test_docs_trace.py::DocumentationTraceTests.test_requirements_trace_to_tests_design_and_live_links` | Infrastructure: documentation trace and link check |
 | `tests/test_docs_trace.py::DocumentationTraceTests.test_manifest_copy_passes_its_own_trace_check` | Infrastructure: a copy holding only `SOURCE-MANIFEST.json` and its listed files passes the trace and link check, as a vendoring consumer such as Cstack runs it; links into `.github/`, which the manifest excludes, are skipped only when `.github/` is absent |
 | `tests/test_docs_trace.py::DocumentationTraceTests.test_generated_reference_documents_are_current` | Infrastructure: generated tool catalog matches the schemas |
-| `tests/test_gen_reports.py::GenerateReportsTests.test_clean_runs_and_gates_pass` | Infrastructure: `tools/gen_reports.py` verdict: clean runs with every gate passed give a passing report and exit 0 |
-| `tests/test_gen_reports.py::GenerateReportsTests.test_main_exits_nonzero_when_gitleaks_finds_a_secret` | Infrastructure: `tools/gen_reports.py` verdict: a Gitleaks finding fails the report and the exit status |
-| `tests/test_gen_reports.py::GenerateReportsTests.test_failing_gate_fails_the_report` | Infrastructure: `tools/gen_reports.py` verdict: a stale generated catalog or a changed manifest fails the report |
-| `tests/test_gen_reports.py::GenerateReportsTests.test_gate_not_run_fails_the_report` | Infrastructure: `tools/gen_reports.py` verdict: a gate that did not run (Gitleaks not installed) fails the report |
-| `tests/test_gen_reports.py::GenerateReportsTests.test_skipped_test_fails_the_report` | Infrastructure: `tools/gen_reports.py` verdict: a skipped test fails the report |
-| `tests/test_gen_reports.py::GenerateReportsTests.test_expected_failure_fails_the_report` | Infrastructure: `tools/gen_reports.py` verdict: an expected failure fails the report |
-| `tests/test_gen_reports.py::GenerateReportsTests.test_unparsed_test_outcome_fails_the_report` | Infrastructure: `tools/gen_reports.py` verdict: a test outcome the parser cannot read fails the report |
-| `tests/test_gen_reports.py::GenerateReportsTests.test_trace_problem_fails_the_report` | Infrastructure: `tools/gen_reports.py` verdict: a trace problem fails the report |
-| `tests/test_gen_reports.py::GenerateReportsTests.test_empty_suite_fails_the_report` | Infrastructure: `tools/gen_reports.py` verdict: a run with no tests fails the report |
 
 ## Change history
 
@@ -57,4 +49,4 @@ Method: T test, I inspection.
 | 1.0 | 2026-10-30 | fbfaadb | Requirement to test-file table | Initial commit |
 | 1.1 | 2026-10-30 | 96671fa | REQ-TPL-007 points at `tests/test_input_limits.py` | PR #3 |
 | 2.0 | 2026-11-08 | fb9993c | Test-method references; rows for REQ-TPL-008 to REQ-TPL-012; results point to the generated test report | PR adding the NASA-standard documentation set |
-| 2.1 | 2026-11-09 | 3814683 | `tests/test_gen_reports.py` tests classified as infrastructure | PR fixing the 2026-11-09 backfill-review findings |
+| 2.1 | 2026-11-09 | 3814683 | Row for REQ-TPL-013 (test report verdict) | PR fixing the 2026-11-09 backfill-review findings |
