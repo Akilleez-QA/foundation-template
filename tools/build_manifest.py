@@ -3,9 +3,11 @@ import json
 from pathlib import Path
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from foundation_template import __version__
 from foundation_template_bridge.schemas import tool_definitions
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def canonical_inventory():
@@ -20,7 +22,7 @@ def main():
     files = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
              for p in sorted(ROOT.rglob("*")) if p.is_file() and "__pycache__" not in p.parts and ".git" not in p.parts
              and p.relative_to(ROOT).parts[0] != ".github" and p.suffix != ".pyc" and p.name != "SOURCE-MANIFEST.json"}
-    raw = (json.dumps({"schema": "foundation-template-source-manifest/1", "version": "0.1.0", "files": files},
+    raw = (json.dumps({"schema": "foundation-template-source-manifest/1", "version": __version__, "files": files},
                       sort_keys=True, indent=2) + "\n").encode()
     (ROOT / "SOURCE-MANIFEST.json").write_bytes(raw)
     print(json.dumps({"files": len(files), "sha256": hashlib.sha256(raw).hexdigest(),

@@ -6,8 +6,6 @@ from foundation_template_bridge.server import LIMITS, WireError, decode_frame, s
 
 
 class InputLimitTests(unittest.TestCase):
-    """REQ-TPL-007: reject inputs beyond every advertised input limit."""
-
     def assert_limit_rejected(self, frame):
         with self.assertRaises(WireError) as caught:
             decode_frame(frame)

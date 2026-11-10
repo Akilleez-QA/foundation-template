@@ -11,10 +11,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from foundation_template import __version__
 from foundation_template_bridge.schemas import tool_definitions
+
+ROOT = Path(__file__).resolve().parents[1]
 
 REPORTS = ROOT / "docs/verification/reports"
 RELEASES = ROOT / "docs/releases"

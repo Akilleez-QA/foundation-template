@@ -1,6 +1,11 @@
 import sys
 
 sys.dont_write_bytecode = True
-from .server import main
 
-raise SystemExit(main())
+
+def run():
+    from .server import main
+    return main()
+
+
+raise SystemExit(run())
