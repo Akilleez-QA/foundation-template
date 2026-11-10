@@ -128,6 +128,22 @@ class GenerateReportsTests(unittest.TestCase):
         report = self.assert_failed(Harness(trace_problems=["VM: example problem"]))
         self.assertIn("VM: example problem", report.split("## 4.")[1])
 
+    def test_only_open_gap_rows_count_as_untested(self):
+        srs = "\n".join([
+            "## 9. Untested behaviour (gaps)", "", "Gap IDs such as GAP-TPL-009 are never reused.", "",
+            "| Gap | Behaviour in code | Where | Status |", "|---|---|---|---|",
+            "| GAP-TPL-001 | Closed behaviour | `server.py` | Closed: `tests/test_bridge.py::GapTests.test_a` |",
+            "| GAP-TPL-002 | Open behaviour, see GAP-TPL-001 | `server.py` | Open: no test |", "",
+            "- Rationale: Formerly GAP-TPL-003."])
+        self.assertEqual(gen_reports.open_gaps(srs), ["GAP-TPL-002"])
+
+    def test_report_lists_no_closed_gap_as_untested(self):
+        report = Harness().main()[2]
+        summary = report.split("## 2.")[0]
+        self.assertIn("0 untested behaviours", summary)
+        self.assertNotIn("GAP-TPL-00", summary)
+        self.assertIn("| Untested behaviour gaps | 0 |", report)
+
     def test_empty_suite_fails_the_report(self):
         self.assert_failed(Harness(suite=(0, suite_stderr([], 0, "NO TESTS RAN"))))
 

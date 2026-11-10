@@ -138,11 +138,18 @@ def footer(today, commit, change):
             f"| 1.0 | {today} | {commit[:7]} | {change} | PR adding the NASA-standard documentation set |"]
 
 
+def open_gaps(srs):
+    rows = (cells for cells in (line.strip().strip("|").split("|") for line in srs.splitlines()
+                                if line.startswith("| " + GAP + "-")) if len(cells) >= 4)
+    return sorted({cells[0].strip() for cells in rows
+                   if re.fullmatch(GAP + r"-\d{3}", cells[0].strip()) and not cells[-1].strip().startswith("Closed")})
+
+
 def write_str(label, commit, dirty, today, runs, trace, gates):
     problems, summary = trace.check()
     mapping = requirement_map(trace)
     srs = trace.SRS.read_text()
-    gaps = sorted(set(re.findall(GAP + r"-\d{3}", srs)))
+    gaps = open_gaps(srs)
     tbd = len(re.findall(r"\bTBD\b(?! / question)", srs))
     lines = source_lines()
     issues = issue_counts()
@@ -199,7 +206,7 @@ def write_str(label, commit, dirty, today, runs, trace, gates):
              f"{sum(v != 'ok' for v in optimized['results'].values())} | `{optimized['command']}` |"),
             (f"| Requirements total / traced to a test or inspection | {summary['requirements']} / {summary['traced']} | "
              "`python -B tools/check_trace.py` |"),
-            f"| Untested behaviour gaps | {len(gaps)} | count of `{GAP}-` IDs in the SRS |",
+            f"| Untested behaviour gaps | {len(gaps)} | count of `{GAP}-` rows in the SRS gap table not marked Closed |",
             f"| TBD markers in the SRS | {tbd} | count of `TBD` in the SRS |",
             "| Requirement changes since previous tag | no previous tag | `git tag --list` |"]
     if issues is None:

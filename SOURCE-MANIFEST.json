@@ -40,17 +40,18 @@
     "foundation_template_bridge/__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed",
     "foundation_template_bridge/__main__.py": "bbf46c37dfd379ea035f28dad581eb7bb63408c9c3f1a73c17b9e6c55eff60bb",
     "foundation_template_bridge/schemas.py": "6519de4783a77be09e6cd6a4f480e5f70b6e77bfb331e4402e89ceecc265216d",
-    "foundation_template_bridge/server.py": "c938ecbd490330b43a7fda824fd2a93be3bb52efc0f407776cb9ab5f1e3d4ae3",
+    "foundation_template_bridge/server.py": "03a88b0cb92e06c4b4bf24bfa6bfe9b3cc2a9bd0b99c62cd79f79c2e12b4a962",
     "tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "tests/test_bridge.py": "3ccafc0f22fa7cfd6b64fcbbee634376ea79531ad977d9d0123607efa637c71a",
     "tests/test_build_manifest.py": "a4c3886c3202823d946eb2277b7767bd7aa11e2c1d0b74990a714d032184d0f1",
     "tests/test_docs_trace.py": "1befba90e3c9cdc492290e6be1e0b5fe70034041a92f987efc981b7b1bc7d7f1",
-    "tests/test_gen_reports.py": "6b759dbd0fbb1dc1ec0b28db4f06137a1a98b82ec1bfb6290d2ad6d1092d46a7",
+    "tests/test_gen_reports.py": "c0ac6b6a03be9b47ff60a41ff2a9cb70280f7f0707c177403bf83fd37b82da11",
     "tests/test_input_limits.py": "d97031b3a1bc175907b426fa5e6397ae223b0fe5923013dc66a30be222ebd587",
+    "tests/test_source_rules.py": "2d829310b97b932a1f50552485869a9759bf7676d77266c48d5c7c86c410ead2",
     "tools/build_manifest.py": "ed42bc369f758bcc506ea31c409c4e1ea1679a418f8293d79aeebdaf4c6dcb5a",
     "tools/check_trace.py": "2a73ef63491eb57a5a558cdcb9ea3ed067ccaebeb97e5d0ce9f6cc8141077338",
     "tools/gen_docs.py": "0fdc21ed154c04feb46e88ed7ea68d3ba1160c4ceb6cf78118487710e4b591ce",
-    "tools/gen_reports.py": "91468797d5c949565ca17037679003cdbd3300d2c95120a1a6c179631aaec550"
+    "tools/gen_reports.py": "5483395d880f8ebf0012e46c6beee4deb26b088c944e5f3be468a05cfb71739e"
   },
   "schema": "foundation-template-source-manifest/1",
   "version": "0.1.0"
